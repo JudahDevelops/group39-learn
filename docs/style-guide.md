@@ -24,6 +24,7 @@ Intelligent Hostel Management System (IHMS) for their group project and must def
 - Integrity rule: AI may explain code but must not write it; every member must be able to explain every line.
 
 ## Engineering rules
+- Every screen follows docs/design.md (tokens, type, components, layouts, copy). Do not invent new colours, fonts or radii.
 - TypeScript strict. No `any` unless commented why.
 - Only the dependencies listed in your WP brief. Ask (report back) before adding others.
 - **Disk is nearly full (~2.6 GB free).** Never run `npx playwright install`. Playwright uses the cached browser:

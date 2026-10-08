@@ -19,7 +19,7 @@ This plan turns that draft into a web platform in the style of freeCodeCamp, wit
 | Repo checks | Members create repos from a template. GitHub Actions runs the official tests, and the platform reads the job results. |
 | Deadline | About one month. The course ships in 4 weekly releases, from 15 Oct to 5 Nov 2026. |
 
-**Sub-agents:** they run as `model: "sonnet"`, which is Sonnet 5, the newest Sonnet; there is no Sonnet 5.5.
+**Sub-agents:** they run on Claude Sonnet 5.5 through the `builder` agent type (`~/.claude/agents/builder.md`, `model: claude-sonnet-5-5`). The plain `sonnet` alias resolves to Sonnet 5, so it is not used.
 
 ## What the reference apps showed (and what we take)
 
@@ -301,7 +301,7 @@ Security and access:
    - Create the repo folder and run `git init`.
    - Copy this plan to `docs/PLAN.md`, so agents read it from disk instead of me pasting it.
    - I make local commits after each accepted WP. Pushing to GitHub happens only with Judah's OK at that moment.
-2. **Brief:** each agent call is `Agent(subagent_type: "general-purpose", model: "sonnet", run_in_background: true)` with this prompt:
+2. **Brief:** each agent call is `Agent(subagent_type: "builder", run_in_background: true)` (no `model` argument, so the agent definition's Sonnet 5.5 pin applies) with this prompt:
    ```
    You are doing WP <id> of Group 39 Learn (repo ~/Work/group39-learn).
    Read first: docs/PLAN.md §<sections>, docs/content-format.md, docs/style-guide.md, <inputs + line ranges>.
