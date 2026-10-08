@@ -1,0 +1,8 @@
+{
+  "id": "lbj9me1r",
+  "slug": "fixture-lesson",
+  "type": "lesson",
+  "title": "Your first web page",
+  "runner": "web",
+  "estMinutes": 6
+}

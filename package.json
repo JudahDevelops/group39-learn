@@ -4,13 +4,19 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
+    "predev": "INCLUDE_FIXTURES=1 npm run content",
     "dev": "vite",
+    "prebuild": "npm run content",
     "build": "tsc -b && vite build",
     "preview": "vite preview --port 4173 --strictPort",
     "lint": "eslint .",
-    "typecheck": "tsc -b --noEmit",
+    "typecheck": "tsc -b --noEmit && tsc -p scripts/tsconfig.json",
     "test": "vitest run",
+    "pretest:e2e": "INCLUDE_FIXTURES=1 npm run build",
     "test:e2e": "playwright test",
+    "content": "tsx scripts/build-content.ts",
+    "validate:content": "tsx scripts/validate-content.ts",
+    "new:step": "tsx scripts/new-step.ts",
     "format": "prettier --write ."
   },
   "dependencies": {

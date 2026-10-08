@@ -1,0 +1,9 @@
+{
+  "id": "i0r4ciea",
+  "slug": "fixture-lab",
+  "type": "lab",
+  "title": "Build a Bursary Notice Page",
+  "runner": "web",
+  "estMinutes": 12,
+  "demo": "index.html"
+}

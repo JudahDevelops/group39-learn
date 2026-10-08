@@ -1,0 +1,9 @@
+{
+  "id": "fuxtogq3",
+  "slug": "fixture-workshop",
+  "type": "workshop",
+  "title": "Build a Hall Notice",
+  "runner": "web",
+  "estMinutes": 8,
+  "demo": "index.html"
+}

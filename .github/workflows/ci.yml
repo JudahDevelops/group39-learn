@@ -28,6 +28,9 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      - name: Validate content
+        run: npm run validate:content
+
       - name: Build
         run: npm run build
 

@@ -1,0 +1,8 @@
+{
+  "id": "bmu58wir",
+  "slug": "fixture-quiz",
+  "type": "quiz",
+  "title": "HTML Basics Quiz",
+  "runner": "none",
+  "estMinutes": 5
+}

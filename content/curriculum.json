@@ -1,0 +1,23 @@
+{
+  "tracks": [
+    {
+      "id": "Z",
+      "title": "Fixtures",
+      "fixture": true,
+      "chapters": [
+        {
+          "id": "Z1",
+          "title": "One of each block type",
+          "blocks": [
+            "fixture-lesson",
+            "fixture-workshop",
+            "fixture-lab",
+            "fixture-quiz",
+            "fixture-review",
+            "fixture-project"
+          ]
+        }
+      ]
+    }
+  ]
+}
