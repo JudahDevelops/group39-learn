@@ -1,0 +1,10 @@
+node_modules/
+dist/
+public/content/
+.env
+.env.local
+*.log
+test-results/
+playwright-report/
+spikes/**/node_modules/
+.DS_Store
