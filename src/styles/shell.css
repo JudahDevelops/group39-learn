@@ -1,0 +1,463 @@
+/* App shell and shared components, from docs/design.md. */
+
+.shell {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.boot-error {
+  margin: var(--space-6) var(--space-4);
+  color: var(--biro);
+}
+
+/* Top bar ------------------------------------------------------------- */
+
+.topbar {
+  flex: 0 0 auto;
+  min-height: var(--topbar-height);
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  padding: 0 var(--space-4);
+  background: var(--door);
+  color: var(--paper);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.topbar-brand {
+  font-weight: 700;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.topbar-nav {
+  display: flex;
+  gap: var(--space-1);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.topbar-nav a {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-control);
+  color: var(--paper);
+  opacity: 0.8;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.topbar-nav a:hover {
+  opacity: 1;
+}
+
+.topbar-nav a.active {
+  opacity: 1;
+  text-decoration: underline 2px var(--key);
+  text-underline-offset: 8px;
+}
+
+.topbar-stats {
+  display: flex;
+  gap: var(--space-2);
+  flex: 0 0 auto;
+}
+
+/* Key tag: a brass chip with a punched hole. --hole is the colour behind it. */
+.key-tag {
+  --hole: var(--plaster);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 var(--space-3) 0 28px;
+  border-radius: var(--radius-control);
+  background: var(--key);
+  color: var(--ink);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.topbar .key-tag {
+  --hole: var(--door);
+}
+
+.key-tag::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: var(--hole);
+}
+
+.chip-short {
+  display: none;
+}
+
+/* Two rows once the bar can no longer fit nav and both chips on one line. */
+@media (max-width: 759px) {
+  .topbar {
+    flex-wrap: wrap;
+    gap: 0 var(--space-3);
+    padding: var(--space-2) var(--space-4);
+  }
+
+  .topbar-brand {
+    flex: 1 1 auto;
+  }
+
+  .topbar-nav {
+    order: 3;
+    flex: 1 1 100%;
+    margin: 0 calc(var(--space-3) * -1);
+  }
+
+  .topbar-nav a {
+    height: var(--touch);
+  }
+}
+
+/* Chips shorten, with the full text in the title for anyone who hovers. */
+@media (max-width: 479px) {
+  .topbar {
+    padding-left: var(--space-3);
+    padding-right: var(--space-3);
+  }
+
+  .topbar-stats {
+    gap: var(--space-1);
+  }
+
+  .topbar .key-tag {
+    font-size: var(--text-meta);
+    line-height: var(--lh-meta);
+    padding-right: var(--space-2);
+  }
+
+  .chip-full {
+    display: none;
+  }
+
+  .chip-short {
+    display: inline-flex;
+  }
+}
+
+/* Buttons and fields --------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--touch);
+  max-width: 100%;
+  padding: var(--space-2) var(--space-5);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  font: inherit;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.btn-primary {
+  background: var(--door);
+  color: var(--paper);
+}
+
+.btn-primary:hover {
+  background: var(--door-hi);
+}
+
+.btn-secondary {
+  background: var(--paper);
+  border-color: var(--rule);
+  color: var(--ink);
+}
+
+.btn-text {
+  background: none;
+  color: var(--ink);
+  padding-left: var(--space-2);
+  padding-right: var(--space-2);
+}
+
+.btn-text:hover {
+  text-decoration: underline;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.field label {
+  font-weight: 600;
+}
+
+.text-input {
+  min-height: var(--touch);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--ink-2);
+  border-radius: var(--radius-control);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+}
+
+.form-error {
+  margin: 0;
+  color: var(--biro);
+}
+
+/* Pages ---------------------------------------------------------------- */
+
+.page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4);
+}
+
+.page > h1 {
+  font-size: var(--text-page);
+  line-height: var(--lh-page);
+  font-weight: 700;
+  margin: 0 0 var(--space-2);
+}
+
+.page > p {
+  color: var(--ink-2);
+  margin: 0 0 var(--space-4);
+  max-width: 65ch;
+}
+
+.placeholder-panel {
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-door);
+  background: var(--paper);
+  padding: var(--space-5);
+  color: var(--ink-2);
+}
+
+.signin-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 360px;
+  margin-bottom: var(--space-4);
+}
+
+.signin-form .btn {
+  align-self: flex-start;
+}
+
+/* Door: 104 x 156 on the map, 2x in the Home hero ---------------------- */
+
+.door {
+  --s: 1;
+  position: relative;
+  flex: 0 0 auto;
+  width: calc(104px * var(--s));
+  height: calc(156px * var(--s));
+  border-radius: var(--radius-door);
+  background: var(--door);
+}
+
+.door-next {
+  background: var(--door-hi);
+  outline: 3px solid var(--key);
+  outline-offset: -3px; /* inside the box, so edges line up with the page */
+}
+
+/* A recessed panel line, so the rectangle reads as a door. */
+.door::after {
+  content: '';
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  top: 40%;
+  bottom: 10%;
+  border: 1px solid rgba(250, 251, 248, 0.22);
+  border-radius: var(--radius-door);
+}
+
+.door-plate {
+  position: absolute;
+  top: 9%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-door);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: var(--text-question);
+  line-height: 1.5rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.door-knob {
+  position: absolute;
+  right: 10%;
+  top: 56%;
+  width: calc(12px * var(--s));
+  height: calc(12px * var(--s));
+  border-radius: 50%;
+  background: var(--key);
+  z-index: 1;
+}
+
+/* Home ------------------------------------------------------------------ */
+
+.page-home {
+  display: grid;
+  gap: var(--space-8) var(--space-8);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+.home-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-5);
+}
+
+.home-hero .door {
+  --s: 2;
+}
+
+.home-hero .door-plate {
+  font-size: var(--text-screen);
+  line-height: 2.5rem;
+}
+
+.home-hero h1 {
+  font-size: var(--text-screen);
+  line-height: var(--lh-screen);
+  margin: 0 0 var(--space-4);
+  max-width: 20ch;
+}
+
+.home-today {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.home-today p {
+  margin: 0;
+}
+
+.today-xp {
+  color: var(--ink);
+  font-size: var(--text-question);
+  line-height: var(--lh-question);
+  font-weight: 700;
+}
+
+.segmented-bar {
+  display: flex;
+  gap: 3px;
+}
+
+.segment {
+  flex: 1 1 0;
+  height: 14px;
+  border-radius: var(--radius-door);
+  background: var(--rule);
+  overflow: hidden;
+}
+
+.segment-fill {
+  display: block;
+  height: 100%;
+  background: var(--door);
+}
+
+.streak-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.home-week {
+  grid-column: 1 / -1;
+}
+
+.home-week h2 {
+  font-size: var(--text-question);
+  line-height: var(--lh-question);
+  font-weight: 700;
+  margin: 0 0 var(--space-3);
+}
+
+.week-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-width: 560px;
+  border-top: 1px solid var(--rule);
+}
+
+.week-list li {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+  align-items: baseline;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--rule);
+  font-variant-numeric: tabular-nums;
+}
+
+.week-rank {
+  color: var(--ink-2);
+}
+
+.week-name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.empty-state {
+  margin: 0;
+  color: var(--ink-2);
+  max-width: 65ch;
+}
+
+@media (min-width: 560px) {
+  .home-hero {
+    flex-direction: row;
+    align-items: flex-end;
+  }
+}
+
+@media (min-width: 900px) {
+  .page-home {
+    grid-template-columns: minmax(0, 1fr) 320px;
+  }
+}

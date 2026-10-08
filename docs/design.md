@@ -132,6 +132,7 @@ There are no page-load entrance animations and no card hover lifts. Under `prefe
 - **Right:** two key-tag chips.
   - Streak: "4-day streak".
   - Daily XP: "35 of 60 XP today".
+  - With no streak, the chip reads "No streak yet" (short form "No streak"), never "0-day streak". The streak appears once per screen: on home it lives in the top bar only.
   - Each is a rounded rectangle in brass with ink text and a small punched hole circle on the left (CSS only).
 - **Below 480 px:** the bar wraps to two rows and the chips shorten to "4 days" and "35/60 XP".
 
@@ -207,7 +208,7 @@ Chapter B1: HTML                                            6 of 11 done
 
 **Home (/).**
 
-- **Hero:** the next door at double size, with its title and a primary button that says exactly where it goes ("Continue Build the Complaint Form, step 4").
+- **Hero:** the next door at double size, with its title above a primary button that names the next step ("Continue with step 4"). The title already names the block, so the button does not repeat it.
 - **Beside it:** today's XP against the goal, as a segmented bar, and the streak.
 - **Below:** this week's leaderboard as a plain ranked list. The ranking is a real sequence, so numbers are fine.
 - No stat-tile row and no big-number hero.
