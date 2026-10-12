@@ -11,7 +11,10 @@ beforeEach(() => {
 describe('LocalStore auth', () => {
   it('restores the saved user on init and notifies listeners', async () => {
     const first = new LocalStore();
-    await first.signIn('ada@example.com', 'pw');
+    const created = await first.signIn('ada@example.com', 'pw');
+    // A new local user starts with an empty display name, like a new Supabase user.
+    expect(created.displayName).toBe('');
+    await first.updateProfile(created.id, { displayName: 'ada' });
 
     const second = new LocalStore();
     const listener = vi.fn();

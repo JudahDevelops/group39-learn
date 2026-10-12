@@ -25,6 +25,8 @@ import type {
 
 const KEYS = {
   profile: 'g39.profile',
+  /** true while someone is signed in. The profile outlives a sign-out, like a database row. */
+  session: 'g39.session',
   progress: 'g39.progress',
   xpEvents: 'g39.xpEvents',
   attempts: 'g39.attempts',
@@ -90,7 +92,8 @@ export class LocalStore implements ProgressStore {
    * whatever profile was last saved to localStorage.
    */
   async init(): Promise<void> {
-    this.currentUser = this.mirror.get<Profile | null>(KEYS.profile, null);
+    const signedIn = this.mirror.get<boolean>(KEYS.session, false);
+    this.currentUser = signedIn ? this.mirror.get<Profile | null>(KEYS.profile, null) : null;
     this.emitAuthChange();
   }
 
@@ -103,10 +106,11 @@ export class LocalStore implements ProgressStore {
    * verification. Never use this store (or this behaviour) in production —
    * it exists so UI and e2e work never wait on Judah's Supabase project.
    */
-  async signIn(email: string, password: string): Promise<Profile> {
+  async signIn(_email: string, password: string): Promise<Profile> {
     if (!password) {
       throw new Error('Enter a password to continue (dev mode: any value works).');
     }
+    this.mirror.set(KEYS.session, true);
     const existing = this.mirror.get<Profile | null>(KEYS.profile, null);
     if (existing) {
       this.currentUser = existing;
@@ -114,10 +118,10 @@ export class LocalStore implements ProgressStore {
       return existing;
     }
 
-    const displayName = email.includes('@') ? email.split('@')[0] : email;
+    // Like a new Supabase user: the display name starts empty and onboarding asks for it.
     const profile: Profile = {
       id: LOCAL_USER_ID,
-      displayName: displayName || 'You',
+      displayName: '',
       githubUsername: null,
       role: 'member',
       dailyGoalXp: DEFAULT_DAILY_GOAL_XP,
@@ -129,7 +133,7 @@ export class LocalStore implements ProgressStore {
   }
 
   async signOut(): Promise<void> {
-    this.mirror.set(KEYS.profile, null);
+    this.mirror.set(KEYS.session, false);
     this.currentUser = null;
     this.emitAuthChange();
   }
