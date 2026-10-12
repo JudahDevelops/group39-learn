@@ -207,7 +207,7 @@ Security and access:
 
 - Vercel serves the static build with an SPA rewrite. COOP/COEP headers are added only if the spike shows `SharedArrayBuffer` is needed.
 - Pyodide and PGlite load from jsDelivr and the service worker caches them, so each member downloads them once. The UI states the size before the first download ("Python needs about N MB, once").
-- The spike measures the real sizes. The estimate is 25–40 MB in total, which matters for members on mobile data.
+- Measured in the spike (docs/SPIKE.md): about 6 MB for Python, 11 MB for FastAPI work and 5 MB for SQL; 16 MB for everything, once. A warm load downloads nothing.
 
 ## Content plan
 
@@ -294,6 +294,13 @@ Security and access:
 | 5.2 | Deployment config (`vercel.json`, env docs, `README` for Judah) | 1.1 | Production build served locally behaves like dev |
 
 **Fallback** if the spike fails for FastAPI in the browser: B6 and B8 workshops move to the laptop and are verified by CI jobs. The SQL chapter stays on PGlite.
+
+**Spike result (12 Oct):** every check passed, so no fallback is needed. The runners follow docs/SPIKE.md. Key points:
+
+- Pyodide 314.0.7 runs in a module worker.
+- FastAPI needs the anyio inline-thread patch before learner code, so `def` routes work. Install `pyjwt` and `python-multipart` before importing FastAPI.
+- PGlite 0.5.8 uses one instance per lesson, reset in place with `DROP SCHEMA public CASCADE` (about 0.1 s) instead of a fresh database (about 3 s).
+- A Python restart after a timeout takes 4–6 s, so the UI shows "Restarting Python".
 
 ## How I run and correct the sub-agents
 
