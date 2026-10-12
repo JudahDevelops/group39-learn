@@ -62,6 +62,7 @@ export function buildOutput(
           itemCount: itemCount(block),
           roomCode: code,
           ...(meta.optional ? { optional: true } : {}),
+          ...(block.type === 'workshop' ? { stepIds: block.steps.map((s) => s.id) } : {}),
         };
       });
       chapters.push({ id: chapter.id, title: chapter.title, blocks: entries });

@@ -46,6 +46,17 @@ describe('buildOutput', () => {
     });
   });
 
+  it('lists a workshop\'s step ids in its summary, and only for workshops', () => {
+    const { curriculum, blocks } = load();
+    const out = buildOutput(curriculum, blocks, { includeFixtures: false });
+    const entries = out.curriculum.tracks[0].chapters[0].blocks;
+    const shop = blocks.get('shop-a');
+    expect(shop?.type).toBe('workshop');
+    const steps = shop?.type === 'workshop' ? shop.steps.map((s) => s.id) : [];
+    expect(entries.find((b) => b.slug === 'shop-a')?.stepIds).toEqual(steps);
+    expect(entries.filter((b) => b.stepIds).map((b) => b.slug)).toEqual(['shop-a']);
+  });
+
   it('produces JSON that satisfies the output schemas', () => {
     const { curriculum, blocks } = load();
     const out = buildOutput(curriculum, blocks, { includeFixtures: false });

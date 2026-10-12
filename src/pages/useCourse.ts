@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchBlock, fetchCurriculum } from '../content/loader';
+import { fetchCurriculum } from '../content/loader';
 import type { CurriculumIndex } from '../content/schema';
 import { useCurrentUser, useStore } from '../store/StoreContext';
 import type { ProgressEntry } from '../store/types';
@@ -19,16 +19,20 @@ export function lastFinishedBlockId(entries: readonly ProgressEntry[]): string |
   return latest?.blockId ?? null;
 }
 
-function workshopSlugs(curriculum: CurriculumIndex): string[] {
-  return curriculum.tracks.flatMap((t) =>
-    t.chapters.flatMap((c) => c.blocks.filter((b) => b.type === 'workshop').map((b) => b.slug)),
-  );
+/** Workshop block id → its step ids, read from the curriculum summary. */
+function workshopStepIds(curriculum: CurriculumIndex): Map<string, string[]> {
+  const stepIds = new Map<string, string[]>();
+  for (const track of curriculum.tracks)
+    for (const chapter of track.chapters)
+      for (const block of chapter.blocks)
+        if (block.type === 'workshop' && block.stepIds) stepIds.set(block.id, block.stepIds);
+  return stepIds;
 }
 
 /**
- * Loads the curriculum and this learner's progress, and builds the course from them. A workshop's
- * step ids come from its block file, so those files load here too (the loader caches them for the
- * workshop player). Loads once per mount: the map and home are remounted on every visit.
+ * Loads the curriculum and this learner's progress, and builds the course from them. Workshop step
+ * ids come with the curriculum summary. Loads once per mount: the map and home are remounted on
+ * every visit.
  */
 export function useCourse(): CourseState {
   const store = useStore();
@@ -39,20 +43,15 @@ export function useCourse(): CourseState {
     if (!userId) return;
     let cancelled = false;
     (async () => {
-      const curriculum = await fetchCurriculum();
-      const [workshops, entries] = await Promise.all([
-        Promise.all(workshopSlugs(curriculum).map((slug) => fetchBlock(slug))),
+      const [curriculum, entries] = await Promise.all([
+        fetchCurriculum(),
         store.listCompleted(userId),
       ]);
-      const stepIds = new Map<string, string[]>();
-      for (const block of workshops) {
-        if (block.type === 'workshop')
-          stepIds.set(
-            block.meta.id,
-            block.steps.map((s) => s.id),
-          );
-      }
-      const course = buildCourse(curriculum, stepIds, new Set(entries.map((e) => e.itemId)));
+      const course = buildCourse(
+        curriculum,
+        workshopStepIds(curriculum),
+        new Set(entries.map((e) => e.itemId)),
+      );
       if (!cancelled) setState({ status: 'ready', course, entries });
     })().catch(() => {
       if (!cancelled) setState({ status: 'error' });

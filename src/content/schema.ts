@@ -706,6 +706,8 @@ export const BlockSummarySchema = z.object({
   /** Chapter id + "-" + 2-digit position in the chapter, e.g. "B1-04". */
   roomCode: RoomCode,
   optional: z.boolean().optional(),
+  /** Workshops only: the step ids in order, so the map and home need not load every workshop. */
+  stepIds: z.array(IdSchema).min(1).optional(),
 });
 export type BlockSummary = z.infer<typeof BlockSummarySchema>;
 
