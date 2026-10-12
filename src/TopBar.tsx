@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { clearPasswordSetupPending } from './store/authLanding';
 import { useCurrentUser, useStore } from './store/StoreContext';
 import { DEFAULT_DAILY_GOAL_XP, streakDays, todayXp } from './lib/xp';
+import { onProgress } from './lib/progress';
 import type { XpEvent } from './store/types';
 
 const navClass = ({ isActive }: { isActive: boolean }) => (isActive ? 'active' : '');
@@ -21,11 +22,16 @@ export function TopBar() {
       setEvents([]);
       return;
     }
-    store.listXpEvents(user.id).then((list) => {
-      if (!cancelled) setEvents(list);
-    });
+    const load = () => {
+      store.listXpEvents(user.id).then((list) => {
+        if (!cancelled) setEvents(list);
+      });
+    };
+    load();
+    const unsubscribe = onProgress(load);
     return () => {
       cancelled = true;
+      unsubscribe();
     };
   }, [store, user, onboarded]);
 
