@@ -1,0 +1,53 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>S1 pyodide in a worker</title></head>
+<body>
+<script type="module">
+import { PyWorker, makeChecks, publish } from "./lib.js";
+import { PYODIDE_VERSION } from "./config.js";
+
+publish(async () => {
+  const c = makeChecks();
+  const pw = new PyWorker();
+
+  const t0 = performance.now();
+  const init = await pw.init();
+  const bootMs = performance.now() - t0;
+  c.check("Pyodide boots in a module Web Worker", init.value.pyodideVersion === PYODIDE_VERSION, { version: init.value.pyodideVersion, bootMs });
+
+  const r1 = await pw.run(`
+import sys, js
+print("hello from python")
+print("second line")
+print("to stderr", file=sys.stderr)
+js.globalThis.constructor.name
+`);
+  c.check("Python runs inside DedicatedWorkerGlobalScope", r1.value === "DedicatedWorkerGlobalScope", r1.value);
+  c.check("stdout lines arrive on the main thread", JSON.stringify(r1.stdout) === JSON.stringify(["hello from python", "second line"]), r1.stdout);
+  c.check("stderr is separate from stdout", JSON.stringify(r1.stderr) === JSON.stringify(["to stderr"]), r1.stderr);
+
+  let err = null;
+  try { await pw.run(`print("before")\n1/0`); } catch (e) { err = e; }
+  c.check("an exception comes back with its traceback, earlier stdout kept",
+    err && /ZeroDivisionError/.test(err.message) && JSON.stringify(err.stdout) === JSON.stringify(["before"]),
+    err && { tail: err.message.trim().split("\n").slice(-2), stdout: err.stdout });
+
+  const r2 = await pw.run(`x = 41\nx + 1`);
+  c.check("state persists between runs and the last expression is returned", r2.value === 42, r2.value);
+
+  const versions = await pw.runJson(`
+import json, sys
+json.dumps({"python": sys.version, "platform": sys.platform})
+`);
+
+  // Informational only: the classic-script loader (importScripts of pyodide.js).
+  const classic = await new Promise((resolve) => {
+    const w = new Worker(new URL("./s1-classic-worker.js", import.meta.url));
+    w.onmessage = (e) => { resolve(e.data); w.terminate(); };
+    w.onerror = (e) => { resolve({ ok: false, error: String(e.message || e) }); w.terminate(); };
+  });
+
+  pw.terminate();
+  return { ok: c.ok, checks: c.list, bootMs, python: versions.json, classicWorkerImportScripts: classic };
+});
+</script>
+</body></html>

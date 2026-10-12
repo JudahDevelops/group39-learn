@@ -1,0 +1,37 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>S7 sizes and timing</title></head>
+<body>
+<script type="module">
+import { PGLITE_BASE_URL } from "./config.js";
+import { PyWorker, publish } from "./lib.js";
+
+// Loads everything the platform would ever download, in stages, and times each stage.
+// run.mjs measures bytes per request from the browser side (not here).
+publish(async () => {
+  const t = {};
+  const stage = async (name, fn) => { const t0 = performance.now(); const v = await fn(); t[name] = performance.now() - t0; return v; };
+  const pw = new PyWorker();
+
+  await stage("pyodideCoreMs", () => pw.init());
+  await stage("fastapiSetMs", () => pw.load(["fastapi", "pydantic", "httpx"]));
+  await stage("sqlalchemyMs", () => pw.load(["sqlalchemy"]));
+  await stage("bcryptMicropipMs", () => pw.load(["bcrypt", "micropip"]));
+  await stage("pyjwtFromPypiMs", () => pw.pip(["pyjwt"]));
+  const smoke = await pw.runJson(`
+import json, fastapi, sqlalchemy, bcrypt, jwt
+json.dumps({"fastapi": fastapi.__version__, "sqlalchemy": sqlalchemy.__version__, "jwt": jwt.__version__})
+`);
+  pw.terminate();
+
+  const { PGlite } = await stage("pgliteImportMs", () => import(PGLITE_BASE_URL + "index.js"));
+  const db = await stage("pgliteBootMs", async () => { const d = new PGlite(); await d.waitReady; return d; });
+  await stage("pgliteQueryMs", () => db.query("select 1 as one"));
+  await db.close();
+
+  t.pythonCoreReadyMs = t.pyodideCoreMs;
+  t.fastapiRunnerReadyMs = t.pyodideCoreMs + t.fastapiSetMs + t.sqlalchemyMs + t.bcryptMicropipMs + t.pyjwtFromPypiMs;
+  t.sqlRunnerReadyMs = t.pgliteImportMs + t.pgliteBootMs;
+  return { ok: smoke.json.fastapi.length > 0, stages: t, smoke: smoke.json };
+});
+</script>
+</body></html>

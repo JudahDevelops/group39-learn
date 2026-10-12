@@ -1,0 +1,73 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>S6 pglite</title></head>
+<body>
+<script type="module">
+import { PGLITE_BASE_URL, PGLITE_VERSION } from "./config.js";
+import { SCHEMA_SOURCE } from "./s6-schema.js";
+import { makeChecks, publish } from "./lib.js";
+import { runDbChecks, loadAppendixD } from "./s6-tests.js";
+
+const mode = new URLSearchParams(location.search).get("mode") || "main";
+
+// Creates a fresh in-memory database and loads Appendix D. Returns timings; `db` is ready to use.
+async function freshDb(imports) {
+  const t0 = performance.now();
+  let db;
+  if (mode === "worker") {
+    const worker = new Worker(new URL("./s6-worker.js", import.meta.url), { type: "module" });
+    db = await imports.PGliteWorker.create(worker);
+    await db.waitReady; // create() resolves before the database inside the worker is up
+  } else {
+    db = new imports.PGlite();
+    await db.waitReady;
+  }
+  await db.query("select 1"); // a worker proxy reports ready early; the first query waits for the real database
+  const bootMs = performance.now() - t0;
+  const t1 = performance.now();
+  await loadAppendixD(db);
+  return { db, bootMs, schemaMs: performance.now() - t1 };
+}
+
+publish(async () => {
+  const c = makeChecks();
+  const tImport = performance.now();
+  const imports = mode === "worker"
+    ? await import(PGLITE_BASE_URL + "worker/index.js")
+    : await import(PGLITE_BASE_URL + "index.js");
+  const importMs = performance.now() - tImport;
+
+  const first = await freshDb(imports);
+  const details = await runDbChecks(first.db, c);
+
+  // Cheaper than a new instance? Reset the same instance in place and reload the schema.
+  const tReset = performance.now();
+  await first.db.exec(`DROP SCHEMA public CASCADE; CREATE SCHEMA public;`);
+  await loadAppendixD(first.db);
+  const resetInPlaceMs = performance.now() - tReset;
+  const afterReset = (await first.db.query(`select (select count(*)::int from users) users, (select count(*)::int from allocations) allocations, (select count(*)::int from hostels) hostels`)).rows[0];
+  c.check("DROP SCHEMA public CASCADE + reload gives a clean database again", afterReset.users === 0 && afterReset.allocations === 0 && afterReset.hostels === 2, afterReset);
+  await first.db.close();
+
+  // "A fresh DB per check": a second instance in the same page (module and wasm already fetched).
+  const second = await freshDb(imports);
+  const n = (await second.db.query(`select count(*)::int as n from hostels`)).rows[0].n;
+  c.check("a second fresh instance starts empty of test rows and loads the schema again", n === 2, { hostels: n });
+  await second.db.close();
+
+  return {
+    ok: c.ok,
+    mode,
+    checks: c.list,
+    pgliteVersion: PGLITE_VERSION,
+    postgres: details.postgres,
+    schemaSource: SCHEMA_SOURCE,
+    importMs,
+    firstBootMs: first.bootMs,
+    firstSchemaMs: first.schemaMs,
+    secondBootMs: second.bootMs,
+    secondSchemaMs: second.schemaMs,
+    resetInPlaceMs,
+  };
+});
+</script>
+</body></html>

@@ -1,0 +1,159 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>S4 bcrypt jwt oauth2</title></head>
+<body>
+<script type="module">
+import { PyWorker, makeChecks, publish, NO_THREADS_PATCH, VERSIONS_PY } from "./lib.js";
+
+publish(async () => {
+  const c = makeChecks();
+  const pw = new PyWorker();
+  await pw.init();
+  await pw.load(["fastapi", "pydantic", "httpx", "bcrypt"]);
+
+  const tPip = performance.now();
+  await pw.pip(["pyjwt"]); // micropip: pypi.org JSON API + wheel from files.pythonhosted.org
+  const pipMs = performance.now() - tPip;
+
+  const versions = (await pw.runJson(VERSIONS_PY(["bcrypt", "pyjwt", "micropip", "fastapi", "starlette"]))).json;
+
+  const crypto = (await pw.runJson(`
+import json, time, bcrypt, jwt
+
+pw = b"hostel-secret-123"
+t = time.time()
+hashed = bcrypt.hashpw(pw, bcrypt.gensalt())   # default cost factor 12
+hash_ms = (time.time() - t) * 1000
+t = time.time()
+ok = bcrypt.checkpw(pw, hashed)
+check_ms = (time.time() - t) * 1000
+bad = bcrypt.checkpw(b"wrong", hashed)
+
+token = jwt.encode({"sub": "amaka"}, "spike-secret", algorithm="HS256")
+decoded = jwt.decode(token, "spike-secret", algorithms=["HS256"])
+try:
+    jwt.decode(token, "other-secret", algorithms=["HS256"])
+    wrong_key = "accepted"
+except jwt.InvalidSignatureError:
+    wrong_key = "InvalidSignatureError"
+
+json.dumps({"hash_prefix": hashed[:4].decode(), "verify_ok": ok, "verify_wrong": bad,
+            "hash_ms": hash_ms, "check_ms": check_ms,
+            "jwt_parts": len(token.split(".")), "decoded_sub": decoded["sub"], "wrong_key": wrong_key})
+`)).json;
+  c.check("bcrypt hash + verify (right password true, wrong password false)", crypto.hash_prefix === "$2b$" && crypto.verify_ok === true && crypto.verify_wrong === false, crypto);
+  c.check("PyJWT HS256 encode/decode round trip, wrong key rejected", crypto.jwt_parts === 3 && crypto.decoded_sub === "amaka" && crypto.wrong_key === "InvalidSignatureError", crypto);
+
+  const api = (await pw.runJson(`
+import json, httpx, jwt
+from fastapi import FastAPI, Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer
+
+SECRET = "spike-secret"
+app = FastAPI()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+async def current_user(token: str = Depends(oauth2_scheme)):
+    try:
+        return jwt.decode(token, SECRET, algorithms=["HS256"])["sub"]
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=401, detail="Invalid token", headers={"WWW-Authenticate": "Bearer"})
+
+@app.get("/me")
+async def me(user: str = Depends(current_user)):
+    return {"user": user}
+
+good = jwt.encode({"sub": "amaka"}, SECRET, algorithm="HS256")
+
+async def call(path, token=None):
+    headers = {"Authorization": "Bearer " + token} if token else {}
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t") as client:
+        r = await client.get(path, headers=headers)
+        return {"status": r.status_code, "json": r.json(), "www": r.headers.get("www-authenticate")}
+
+json.dumps({"none": await call("/me"), "bad": await call("/me", "garbage"), "good": await call("/me", good)})
+`)).json;
+  c.check("OAuth2PasswordBearer route: 401 without a token", api.none.status === 401 && api.none.www === "Bearer", api.none);
+  c.check("OAuth2PasswordBearer route: 401 with a bad token", api.bad.status === 401, api.bad);
+  c.check("OAuth2PasswordBearer route: 200 with a valid token", api.good.status === 200 && api.good.json.user === "amaka", api.good);
+
+  // The login endpoint most tutorials use takes a form (OAuth2PasswordRequestForm) and needs python-multipart.
+  const FORM_ROUTE = `
+import importlib.metadata
+from fastapi.security import OAuth2PasswordRequestForm
+
+@app.post("/token")
+async def token_route(form: OAuth2PasswordRequestForm = Depends()):
+    return {"access_token": jwt.encode({"sub": form.username}, SECRET, algorithm="HS256"), "token_type": "bearer"}
+
+async def post_form():
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t") as client:
+        r = await client.post("/token", data={"username": "amaka", "password": "x"})
+        t = r.json().get("access_token") if r.status_code == 200 else None
+        r2 = await client.get("/me", headers={"Authorization": "Bearer " + t}) if t else None
+        return {"status": r.status_code, "body": r.text[:200], "then_me": r2.status_code if r2 else None,
+                "version": importlib.metadata.version("python-multipart")}
+`;
+  // (a) Without python-multipart: FastAPI refuses to define the route.
+  const formBefore = (await pw.runJson(`
+def _try():
+    try:
+        from fastapi.security import OAuth2PasswordRequestForm
+        @app.post("/token")
+        async def token_route(form: OAuth2PasswordRequestForm = Depends()):
+            return {}
+        return {"defined": True}
+    except BaseException as e:
+        return {"defined": False, "error": type(e).__name__ + ": " + str(e)[:80]}
+json.dumps(_try())
+`)).json;
+  // (b) Installed after fastapi/starlette were already imported: the route can be defined, the request still fails.
+  await pw.pip(["python-multipart"]);
+  await pw.run(NO_THREADS_PATCH); // OAuth2PasswordRequestForm is a sync class dependency, so it also needs the inline patch (S2)
+  const formLate = (await pw.runJson(FORM_ROUTE + "\njson.dumps(await post_form())")).json;
+  pw.terminate();
+
+  // (c) Installed before fastapi is imported (what the runner should do): works.
+  const pw2 = new PyWorker();
+  await pw2.init();
+  const tMp = performance.now();
+  await pw2.load(["fastapi", "pydantic", "httpx"]);
+  await pw2.pip(["pyjwt", "python-multipart"]);
+  const multipartMs = performance.now() - tMp;
+  await pw2.run(`
+import json, httpx, jwt
+from fastapi import FastAPI, Depends
+SECRET = "spike-secret"
+app = FastAPI()
+@app.get("/me")
+async def me():
+    return {}
+` + FORM_ROUTE);
+  const formUnpatched = (await pw2.runJson(`
+async def _try():
+    try:
+        return await post_form()
+    except BaseException as e:
+        return {"error": type(e).__name__ + ": " + str(e)}
+json.dumps(await _try())
+`)).json;
+  await pw2.run(NO_THREADS_PATCH);
+  const formEarly = (await pw2.runJson(`json.dumps(await post_form())`)).json;
+  pw2.terminate();
+  c.check("OAuth2PasswordRequestForm login route: POST form -> 200 + token when python-multipart is installed before fastapi is imported",
+    formEarly.status === 200, { formBefore, formLate, formUnpatched, formEarly });
+
+  return {
+    ok: c.ok,
+    checks: c.list,
+    versions: { ...versions, "python-multipart": formEarly.version },
+    bcryptHashMs: crypto.hash_ms,
+    bcryptCheckMs: crypto.check_ms,
+    micropipPyjwtMs: pipMs,
+    pyjwtAndMultipartLoadMs: multipartMs,
+    formRouteWithoutMultipart: formBefore,
+    formRouteMultipartInstalledAfterImport: formLate,
+    formRouteWithoutInlinePatch: formUnpatched,
+  };
+});
+</script>
+</body></html>

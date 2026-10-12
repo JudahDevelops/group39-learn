@@ -1,0 +1,172 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>S3 sqlalchemy</title></head>
+<body>
+<script type="module">
+import { PyWorker, makeChecks, publish, NO_THREADS_PATCH, VERSIONS_PY } from "./lib.js";
+
+publish(async () => {
+  const c = makeChecks();
+  const pw = new PyWorker();
+  await pw.init();
+  await pw.load(["fastapi", "pydantic", "httpx", "sqlalchemy"]);
+
+  const versions = (await pw.runJson(VERSIONS_PY(["sqlalchemy", "fastapi", "pydantic"]))).json;
+  const sqlite = (await pw.runJson(`import json, sqlite3\njson.dumps({"sqlite3": sqlite3.sqlite_version})`)).json;
+
+  // 1. Plain ORM on in-memory SQLite.
+  const orm = (await pw.runJson(`
+import json
+from sqlalchemy import create_engine, select, String, ForeignKey
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, Session
+
+class Base(DeclarativeBase):
+    pass
+
+class Hostel(Base):
+    __tablename__ = "hostels"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(40), unique=True)
+    rooms: Mapped[list["Room"]] = relationship(back_populates="hostel")
+
+class Room(Base):
+    __tablename__ = "rooms"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    number: Mapped[str] = mapped_column(String(10))
+    hostel_id: Mapped[int] = mapped_column(ForeignKey("hostels.id"))
+    hostel: Mapped[Hostel] = relationship(back_populates="rooms")
+
+engine = create_engine("sqlite://")
+Base.metadata.create_all(engine)
+with Session(engine) as s:
+    a = Hostel(name="Block A", rooms=[Room(number="A-101"), Room(number="A-102")])
+    s.add(a)
+    s.commit()
+with Session(engine) as s:
+    rows = s.execute(select(Room.number, Hostel.name).join(Hostel).order_by(Room.number)).all()
+    n = s.scalar(select(Hostel).where(Hostel.name == "Block A")).rooms
+    out = {"rows": [list(r) for r in rows], "room_count": len(n)}
+json.dumps(out)
+`)).json;
+  c.check("SQLAlchemy 2.0 ORM: model, create_all, insert, select (in-memory SQLite)",
+    JSON.stringify(orm.rows) === '[["A-101","Block A"],["A-102","Block A"]]' && orm.room_count === 2, orm);
+
+  // 2. FastAPI route with a Session dependency (async generator dependency, no thread pool needed).
+  const api = (await pw.runJson(`
+import json, httpx
+from fastapi import FastAPI, Depends
+from pydantic import BaseModel
+from sqlalchemy import select
+
+class StudentIn(BaseModel):
+    name: str
+
+class Student(Base):
+    __tablename__ = "students"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(80))
+
+Base.metadata.create_all(engine)
+app = FastAPI()
+
+async def get_session():
+    with Session(engine) as session:
+        yield session
+
+@app.post("/students")
+async def add_student(body: StudentIn, session: Session = Depends(get_session)):
+    s = Student(name=body.name)
+    session.add(s)
+    session.commit()
+    return {"id": s.id, "name": s.name}
+
+@app.get("/students")
+async def list_students(session: Session = Depends(get_session)):
+    return [{"id": r.id, "name": r.name} for r in session.scalars(select(Student).order_by(Student.id))]
+
+async def call(method, path, **kw):
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t") as client:
+        r = await client.request(method, path, **kw)
+        return {"status": r.status_code, "json": r.json()}
+
+out = {
+  "post": await call("POST", "/students", json={"name": "Amaka"}),
+  "post2": await call("POST", "/students", json={"name": "Bello"}),
+  "list": await call("GET", "/students"),
+}
+json.dumps(out)
+`)).json;
+  c.check("FastAPI + Session dependency (async generator) via ASGITransport",
+    api.post.status === 200 && api.post.json.name === "Amaka" && api.list.status === 200 && api.list.json.length === 2 && api.list.json[1].name === "Bello", api);
+
+  // 3. The textbook pattern: `def get_db()` generator dependency + `def` routes + file SQLite.
+  const textbook = `
+import json, os, httpx
+from fastapi import FastAPI, Depends
+from sqlalchemy import create_engine, select, String
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker, Session
+
+os.makedirs("/app", exist_ok=True)
+engine2 = create_engine("sqlite:////app/ihms.db", connect_args={"check_same_thread": False})
+SessionLocal = sessionmaker(bind=engine2, autoflush=False, autocommit=False)
+
+class Base2(DeclarativeBase):
+    pass
+
+class Note(Base2):
+    __tablename__ = "notes"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    text: Mapped[str] = mapped_column(String(80))
+
+Base2.metadata.create_all(engine2)
+app2 = FastAPI()
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+@app2.post("/notes")
+def add_note(text: str, db: Session = Depends(get_db)):
+    n = Note(text=text)
+    db.add(n)
+    db.commit()
+    db.refresh(n)
+    return {"id": n.id, "text": n.text}
+
+@app2.get("/notes")
+def list_notes(db: Session = Depends(get_db)):
+    return [{"id": r.id, "text": r.text} for r in db.scalars(select(Note))]
+
+async def call2(method, path, **kw):
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app2), base_url="http://t") as client:
+        r = await client.request(method, path, **kw)
+        return {"status": r.status_code, "json": r.json()}
+`;
+  await pw.run(textbook);
+  const before = (await pw.runJson(`
+async def _try():
+    try:
+        return {"ok": True, **(await call2("POST", "/notes", params={"text": "hi"}))}
+    except BaseException as e:
+        return {"ok": False, "error": type(e).__name__ + ": " + str(e)}
+json.dumps(await _try())
+`)).json;
+  await pw.run(NO_THREADS_PATCH);
+  const after = (await pw.runJson(`
+out = {
+  "post": await call2("POST", "/notes", params={"text": "first"}),
+  "list": await call2("GET", "/notes"),
+  "file_exists": os.path.exists("/app/ihms.db"),
+}
+json.dumps(out)
+`)).json;
+  c.check("textbook def get_db() + def routes + file SQLite work after the inline patch",
+    after.post.status === 200 && after.list.status === 200 && after.list.json.length === 1 && after.list.json[0].text === "first" && after.file_exists, after);
+
+  pw.terminate();
+  return { ok: c.ok, checks: c.list, versions: { ...versions, ...sqlite }, textbookWithoutPatch: before };
+});
+</script>
+</body></html>

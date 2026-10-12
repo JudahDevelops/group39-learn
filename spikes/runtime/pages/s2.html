@@ -1,0 +1,109 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>S2 fastapi pydantic httpx</title></head>
+<body>
+<script type="module">
+import { PyWorker, makeChecks, publish, NO_THREADS_PATCH, VERSIONS_PY } from "./lib.js";
+
+const APP = `
+import json, httpx
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+app = FastAPI()
+
+class Complaint(BaseModel):
+    room: str
+    description: str
+    urgent: bool = False
+
+@app.get("/ping")
+async def ping():
+    return {"pong": True}
+
+@app.post("/complaints")
+async def create_complaint(c: Complaint):
+    return {"id": 1, "status": "Open", **c.model_dump()}
+
+@app.get("/sync-ping")
+def sync_ping():
+    return {"sync": True}
+
+async def call(method, path, **kw):
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t") as client:
+        r = await client.request(method, path, **kw)
+        return {"status": r.status_code, "json": r.json()}
+`;
+
+publish(async () => {
+  const c = makeChecks();
+  const pw = new PyWorker();
+  await pw.init();
+
+  const tLoad = performance.now();
+  await pw.load(["fastapi", "pydantic", "httpx"]);
+  const loadMs = performance.now() - tLoad;
+
+  const versions = (await pw.runJson(VERSIONS_PY(["fastapi", "starlette", "pydantic", "pydantic_core", "httpx", "anyio", "jinja2", "typing_extensions"]))).json;
+
+  await pw.run(APP);
+  const run = async (expr) => (await pw.runJson(`json.dumps(await ${expr})`)).json;
+
+  const get = await run(`call("GET", "/ping")`);
+  c.check("GET /ping -> 200 {pong: true}", get.status === 200 && get.json.pong === true, get);
+
+  const post = await run(`call("POST", "/complaints", json={"room": "A-101", "description": "Leaking tap", "urgent": True})`);
+  c.check("POST /complaints with a pydantic model -> 200 and echoed JSON",
+    post.status === 200 && post.json.id === 1 && post.json.room === "A-101" && post.json.urgent === true && post.json.status === "Open", post);
+
+  const bad = await run(`call("POST", "/complaints", json={"room": "A-101"})`);
+  c.check("invalid body -> 422 with pydantic error location", bad.status === 422 && JSON.stringify(bad.json.detail[0].loc) === '["body","description"]', bad);
+
+  const missing = await run(`call("GET", "/nope")`);
+  c.check("unknown path -> 404", missing.status === 404, missing);
+
+  const openapi = await run(`call("GET", "/openapi.json")`);
+  c.check("GET /openapi.json -> 200 and lists both routes", openapi.status === 200 && "/ping" in openapi.json.paths && "/complaints" in openapi.json.paths, Object.keys(openapi.json.paths || {}));
+
+  // Plain `def` handler: FastAPI sends it to a thread pool. Record what happens, then apply the inline patch.
+  const syncBefore = (await pw.runJson(`
+async def _try():
+    try:
+        return {"ok": True, **(await call("GET", "/sync-ping"))}
+    except BaseException as e:
+        return {"ok": False, "error": type(e).__name__ + ": " + str(e)}
+json.dumps(await _try())
+`)).json;
+  await pw.run(NO_THREADS_PATCH);
+  const syncAfter = await run(`call("GET", "/sync-ping")`);
+  c.check("def handler works after the anyio inline patch", syncAfter.status === 200 && syncAfter.json.sync === true, syncAfter);
+
+  // starlette TestClient: expected to fail (needs a thread for its portal).
+  const testClient = (await pw.runJson(`
+def _try():
+    out = {}
+    try:
+        from starlette.testclient import TestClient
+        out["import"] = "ok"
+    except BaseException as e:
+        return {"import": type(e).__name__ + ": " + str(e)}
+    try:
+        r = TestClient(app).get("/ping")
+        out["call"] = "ok " + str(r.status_code)
+    except BaseException as e:
+        out["call"] = type(e).__name__ + ": " + str(e)
+    return out
+json.dumps(_try())
+`)).json;
+
+  pw.terminate();
+  return {
+    ok: c.ok,
+    checks: c.list,
+    versions,
+    loadPackagesMs: loadMs,
+    defHandlerWithoutPatch: syncBefore,
+    starletteTestClient: testClient,
+  };
+});
+</script>
+</body></html>

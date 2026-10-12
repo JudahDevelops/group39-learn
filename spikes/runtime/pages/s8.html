@@ -1,0 +1,49 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>S8 cross-origin isolation</title></head>
+<body>
+<script type="module">
+import { PGLITE_BASE_URL } from "./config.js";
+import { PyWorker, makeChecks, publish } from "./lib.js";
+
+// Reports what this origin offers and, when SharedArrayBuffer exists, tests the one feature that
+// needs it: interrupting a running Python loop without killing the worker (Pyodide setInterruptBuffer).
+publish(async () => {
+  const c = makeChecks();
+  const env = {
+    crossOriginIsolated: self.crossOriginIsolated,
+    sharedArrayBufferDefined: typeof SharedArrayBuffer !== "undefined",
+  };
+
+  const pw = new PyWorker();
+  const t0 = performance.now();
+  await pw.init();
+  await pw.load(["fastapi", "pydantic", "httpx"]);
+  const bootMs = performance.now() - t0;
+  const py = await pw.run(`print("python ok")`);
+  c.check("Pyodide boots and loads packages on this origin", py.stdout[0] === "python ok", { bootMs });
+
+  const { PGlite } = await import(PGLITE_BASE_URL + "index.js");
+  const db = new PGlite();
+  await db.waitReady;
+  const one = await db.query("select 1 as one");
+  c.check("PGlite boots on this origin", one.rows[0].one === 1, null);
+  await db.close();
+
+  let interrupt = null;
+  if (env.sharedArrayBufferDefined) {
+    const buffer = new Int32Array(new SharedArrayBuffer(4));
+    await pw.call("interrupt-buffer", { buffer });
+    const start = performance.now();
+    setTimeout(() => Atomics.store(buffer, 0, 2), 1000); // 2 = SIGINT
+    let message = null;
+    try { await pw.run(`while True: pass`); } catch (e) { message = e.message; }
+    const ms = performance.now() - start;
+    const stillAlive = await pw.run(`1 + 1`).then((r) => r.value === 2).catch(() => false);
+    interrupt = { interrupted: /KeyboardInterrupt/.test(message || ""), ms, workerStillAlive: stillAlive };
+    c.check("setInterruptBuffer stops while True: pass in about 1 s and keeps the worker alive", interrupt.interrupted && interrupt.workerStillAlive && ms < 3000, interrupt);
+  }
+  pw.terminate();
+  return { ok: c.ok, checks: c.list, env, interrupt };
+});
+</script>
+</body></html>

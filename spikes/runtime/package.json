@@ -1,0 +1,13 @@
+{
+  "name": "group39-learn-runtime-spike",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "WP 0.1 runtime feasibility spike: Pyodide + PGlite in a desktop browser via playwright-core.",
+  "scripts": {
+    "start": "node run.mjs"
+  },
+  "dependencies": {
+    "playwright-core": "^1.48.0"
+  }
+}
