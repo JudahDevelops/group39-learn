@@ -1,6 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const PORT = 4173;
+// E2E_PORT lets several test runs (e.g. parallel agents) each build and serve their own copy.
+const PORT = Number(process.env.E2E_PORT ?? 4173);
+const OUT_DIR = `.e2e-dist/${PORT}`;
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -13,10 +15,10 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   webServer: {
-    command: `npm run preview -- --port ${PORT} --strictPort`,
+    command: `npx vite build --outDir ${OUT_DIR} --emptyOutDir && npx vite preview --outDir ${OUT_DIR} --port ${PORT} --strictPort`,
     url: `http://localhost:${PORT}`,
-    reuseExistingServer: !process.env.CI,
-    timeout: 60_000,
+    reuseExistingServer: false,
+    timeout: 120_000,
   },
   projects: [
     {

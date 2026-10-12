@@ -12,7 +12,7 @@
     "lint": "eslint .",
     "typecheck": "tsc -b --noEmit && tsc -p scripts/tsconfig.json",
     "test": "vitest run",
-    "pretest:e2e": "INCLUDE_FIXTURES=1 npm run build",
+    "pretest:e2e": "INCLUDE_FIXTURES=1 npm run content",
     "test:e2e": "playwright test",
     "content": "tsx scripts/build-content.ts",
     "validate:content": "tsx scripts/validate-content.ts",

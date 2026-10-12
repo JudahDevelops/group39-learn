@@ -30,6 +30,9 @@ Intelligent Hostel Management System (IHMS) for their group project and must def
 - **Disk is nearly full (~2.6 GB free).** Never run `npx playwright install`. Playwright uses the cached browser:
   `PW_CHROMIUM_PATH=/home/judah/.cache/puppeteer/chrome-headless-shell/linux-151.0.7922.47/chrome-headless-shell-linux64/chrome-headless-shell`
   (playwright.config reads it from the env; CI installs its own browsers). Do not create git worktrees.
+- Run e2e with the port your brief gives you: `E2E_PORT=<port> PW_CHROMIUM_PATH=... npm run test:e2e`. Each port
+  builds into its own `.e2e-dist/<port>/`, so parallel agents never test each other's build. Delete your
+  `.e2e-dist/<port>/` when you finish.
   Do not download large files except the npm packages in your brief.
 - No git push, no remote writes, no secrets in files.
 
