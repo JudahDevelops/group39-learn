@@ -10,3 +10,4 @@ spikes/**/node_modules/
 .DS_Store
 *.tsbuildinfo
 .e2e-dist/
+.obsidian/

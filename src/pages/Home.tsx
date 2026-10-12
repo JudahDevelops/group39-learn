@@ -1,18 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Door } from '../components/Door';
+import { RankedList } from '../components/RankedList';
+import '../styles/home.css';
 import { useCurrentUser, useStore } from '../store/StoreContext';
-import { DEFAULT_DAILY_GOAL_XP, streakDays, todayXp } from '../lib/xp';
+import { DEFAULT_DAILY_GOAL_XP, todayXp } from '../lib/xp';
 import type { LeaderboardRow, XpEvent } from '../store/types';
-
-// Placeholder for the learner's next item. The map (WP 1.6) will resolve the
-// real one from the curriculum and the learner's progress.
-const NEXT_ITEM = {
-  blockSlug: 'b1-complaint-form',
-  itemId: 'step-4',
-  roomCode: 'B1-07',
-  title: 'Build the Complaint Form',
-  stepLabel: 'step 4',
-};
+import { blockMetaLine, blockPath, heroFor } from './course';
+import { rankRows } from './ranking';
+import { writeSeenDoneIfMissing } from './seenDone';
+import { lastFinishedBlockId, useCourse } from './useCourse';
 
 /** One segment of the daily bar stands for this much XP. */
 const XP_PER_SEGMENT = 10;
@@ -44,6 +41,7 @@ export function Home() {
   const store = useStore();
   const navigate = useNavigate();
   const user = useCurrentUser();
+  const course = useCourse();
   const [events, setEvents] = useState<XpEvent[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardRow[]>([]);
 
@@ -65,30 +63,53 @@ export function Home() {
     };
   }, [store, user]);
 
-  const now = new Date();
-  const xpToday = todayXp(events, now);
-  const streak = streakDays(events, now);
+  // The map celebrates blocks finished since the learner last saw it. Seeing home first must not
+  // hide that, so home only leaves a starting point when there is none yet.
+  useEffect(() => {
+    if (course.status !== 'ready') return;
+    writeSeenDoneIfMissing(course.course.blocks.filter((b) => b.done).map((b) => b.summary.id));
+  }, [course]);
+
+  const xpToday = todayXp(events, new Date());
   const dailyGoalXp = user?.dailyGoalXp ?? DEFAULT_DAILY_GOAL_XP;
-  const ranked = leaderboard.slice().sort((a, b) => b.weekXp - a.weekXp);
-  const weekIsEmpty = ranked.every((row) => row.weekXp === 0);
+  const ranked = rankRows(leaderboard, 'week');
+  const weekIsEmpty = ranked.every((row) => row.xp === 0);
+  const hero =
+    course.status === 'ready' ? heroFor(course.course, lastFinishedBlockId(course.entries)) : null;
 
   return (
     <div className="page page-home">
-      <section className="home-hero">
-        <div className="door door-next" aria-hidden="true">
-          <span className="door-plate">{NEXT_ITEM.roomCode}</span>
-          <span className="door-knob" />
-        </div>
-        <div>
-          <h1>{NEXT_ITEM.title}</h1>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => navigate(`/learn/${NEXT_ITEM.blockSlug}/${NEXT_ITEM.itemId}`)}
-          >
-            Continue {NEXT_ITEM.title}, {NEXT_ITEM.stepLabel}
-          </button>
-        </div>
+      <section className="home-hero" aria-label="Your next step">
+        {hero && (
+          <>
+            <div className="hero-door" aria-hidden="true">
+              <Door
+                roomCode={hero.block.summary.roomCode}
+                state={hero.allDone ? 'done' : 'next'}
+                large
+              />
+            </div>
+            <div className="hero-body">
+              <h1>{hero.block.summary.title}</h1>
+              <p className="hero-meta">{blockMetaLine(hero.block.summary)}</p>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => navigate(blockPath(hero.block))}
+              >
+                {hero.label}
+              </button>
+            </div>
+          </>
+        )}
+        {course.status === 'error' && (
+          <p role="alert" className="form-error">
+            Your course could not be loaded. Check your connection, then reload the page.
+          </p>
+        )}
+        {course.status === 'ready' && !hero && (
+          <p className="empty-state">The course has no blocks yet.</p>
+        )}
       </section>
 
       <section className="home-today" aria-label="Today">
@@ -96,12 +117,6 @@ export function Home() {
           {xpToday} of {dailyGoalXp} XP today
         </p>
         <DailyBar xp={xpToday} goal={dailyGoalXp} />
-        <p className="streak-line">
-          <span className="key-tag">{streak}-day streak</span>
-          {xpToday === 0 && (
-            <span>{streak > 0 ? 'Earn XP today to keep it.' : 'Earn XP today to start one.'}</span>
-          )}
-        </p>
       </section>
 
       <section className="home-week">
@@ -109,15 +124,7 @@ export function Home() {
         {weekIsEmpty ? (
           <p className="empty-state">No XP yet this week. Continue your course to start.</p>
         ) : (
-          <ol className="week-list">
-            {ranked.map((row, i) => (
-              <li key={row.userId}>
-                <span className="week-rank">{i + 1}</span>
-                <span className="week-name">{row.displayName}</span>
-                <span className="week-xp">{row.weekXp} XP</span>
-              </li>
-            ))}
-          </ol>
+          <RankedList rows={ranked} currentUserId={user?.id} label="This week" />
         )}
       </section>
     </div>

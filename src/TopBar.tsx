@@ -45,6 +45,9 @@ export function TopBar() {
   const streak = streakDays(events, now);
   const xpToday = todayXp(events, now);
   const dailyGoalXp = user?.dailyGoalXp ?? DEFAULT_DAILY_GOAL_XP;
+  // design.md: never "0-day streak".
+  const streakLabel = streak > 0 ? `${streak}-day streak` : 'No streak yet';
+  const streakShort = streak > 0 ? `${streak} ${streak === 1 ? 'day' : 'days'}` : 'No streak';
 
   return (
     <header className="topbar">
@@ -65,10 +68,10 @@ export function TopBar() {
       {onboarded && (
         <div className="topbar-stats">
           <span className="key-tag chip-full" title="Current streak">
-            {streak}-day streak
+            {streakLabel}
           </span>
-          <span className="key-tag chip-short" title={`${streak}-day streak`}>
-            {streak} days
+          <span className="key-tag chip-short" title={streakLabel}>
+            {streakShort}
           </span>
           <span className="key-tag chip-full" title="XP earned today">
             {xpToday} of {dailyGoalXp} XP today

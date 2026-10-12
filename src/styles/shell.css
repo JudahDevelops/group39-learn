@@ -135,6 +135,7 @@
 /* Chips shorten, with the full text in the title for anyone who hovers. */
 @media (max-width: 479px) {
   .topbar {
+    gap: 0 var(--space-2);
     padding-left: var(--space-3);
     padding-right: var(--space-3);
   }
@@ -147,6 +148,20 @@
     font-size: var(--text-meta);
     line-height: var(--lh-meta);
     padding-right: var(--space-2);
+    padding-left: 22px;
+  }
+
+  .topbar .key-tag::before {
+    left: 8px;
+  }
+
+  /* A zero basis keeps the brand on row one; it gives way with an ellipsis when the chips grow. */
+  .topbar-brand {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .chip-full {
@@ -415,32 +430,6 @@
   line-height: var(--lh-question);
   font-weight: 700;
   margin: 0 0 var(--space-3);
-}
-
-.week-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  max-width: 560px;
-  border-top: 1px solid var(--rule);
-}
-
-.week-list li {
-  display: grid;
-  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
-  align-items: baseline;
-  padding: var(--space-3) 0;
-  border-bottom: 1px solid var(--rule);
-  font-variant-numeric: tabular-nums;
-}
-
-.week-rank {
-  color: var(--ink-2);
-}
-
-.week-name {
-  font-weight: 600;
-  overflow-wrap: anywhere;
 }
 
 .empty-state {

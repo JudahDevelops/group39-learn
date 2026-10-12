@@ -1,0 +1,217 @@
+/* Course map and doors, from docs/design.md "Map (/learn)". The door base (size, plate, knob, panel
+   line, next-up outline) lives in shell.css; this file adds the key tag, the corridor rows and the
+   celebration. */
+
+/* Text for screen readers only (door status, option marks). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+/* Doors ------------------------------------------------------------------ */
+
+.door.door-large {
+  --s: 2;
+}
+
+.door.door-large .door-plate {
+  font-size: var(--text-screen);
+  line-height: 2.5rem;
+}
+
+/* The knob sits above the key tag that hangs from it. */
+.door .door-knob {
+  z-index: 2;
+}
+
+/* Key tag: brass, with the knob through its punched hole. Everything is a multiple of --s so the
+   tag scales with the door. The hole centre is the knob centre, which is also the swing pivot. */
+.door-tag {
+  position: absolute;
+  z-index: 1;
+  left: calc(90% - 20px * var(--s));
+  top: calc(56% - 6px * var(--s));
+  width: calc(28px * var(--s));
+  height: calc(38px * var(--s));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: calc(16px * var(--s));
+  border-radius: var(--radius-control);
+  background: var(--key);
+  color: var(--ink);
+  font-size: calc(15px * var(--s));
+  line-height: 1;
+  font-weight: 800;
+  transform-origin: calc(14px * var(--s)) calc(12px * var(--s));
+}
+
+.door-tag::before {
+  content: '';
+  position: absolute;
+  left: calc(6px * var(--s));
+  top: calc(4px * var(--s));
+  width: calc(16px * var(--s));
+  height: calc(16px * var(--s));
+  border-radius: 50%;
+  background: var(--door);
+}
+
+/* The one celebration: the tag drops onto the knob and swings once. Never under reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .door-tag-drop {
+    animation: tag-drop 600ms ease-out both;
+  }
+}
+
+@keyframes tag-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(calc(-40px * var(--s))) rotate(0deg);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(0) rotate(0deg);
+  }
+  55% {
+    transform: rotate(16deg);
+  }
+  78% {
+    transform: rotate(-8deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+/* Map ---------------------------------------------------------------------- */
+
+.page.page-map {
+  max-width: 1120px;
+}
+
+.page.page-map > h1 {
+  margin-bottom: var(--space-5);
+}
+
+.map-track + .map-track {
+  margin-top: var(--space-8);
+}
+
+.map-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-4);
+}
+
+.map-head h2 {
+  margin: 0;
+  font-size: var(--text-page);
+  line-height: var(--lh-page);
+  font-weight: 700;
+}
+
+.map-head h3 {
+  margin: 0;
+  font-size: var(--text-question);
+  line-height: var(--lh-question);
+  font-weight: 700;
+}
+
+.map-head-track {
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--rule);
+}
+
+.map-count {
+  margin: 0;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.map-count-track {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-control);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.map-chapter {
+  margin-top: var(--space-6);
+}
+
+/* A corridor row: doors side by side, wrapping on a laptop. */
+.corridor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-5) var(--space-4);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.room {
+  flex: 0 0 136px;
+}
+
+.room-link {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  color: inherit;
+  text-decoration: none;
+}
+
+.room-link .door {
+  margin-bottom: var(--space-2);
+}
+
+.room-link:hover .door:not(.door-next) {
+  background: var(--door-hi);
+}
+
+.room-link:hover .room-title {
+  text-decoration: underline;
+}
+
+.room-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.room-meta {
+  color: var(--ink-2);
+  font-size: var(--text-meta);
+  line-height: var(--lh-meta);
+}
+
+/* Phones: one row of doors that scrolls sideways and stops on each door. */
+@media (max-width: 639px) {
+  .corridor {
+    flex-wrap: nowrap;
+    margin-inline: calc(var(--space-4) * -1);
+    padding: var(--space-1) var(--space-4) var(--space-3);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--space-4);
+  }
+
+  .room {
+    scroll-snap-align: start;
+  }
+}

@@ -1,0 +1,889 @@
+/* Lesson player and its screens, from docs/design.md (Lesson player, Option row, Feedback sheet,
+   Combo counter, Progress bar). Tokens come from tokens.css; nothing here adds a colour of its own
+   except the editable-region background that the design doc names for the workshop editor. */
+
+.lesson {
+  /* "#1E2D27" in docs/design.md: the background of an editable region. */
+  --bench-edit: #1e2d27;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - var(--topbar-height));
+  min-height: calc(100dvh - var(--topbar-height));
+}
+
+.lesson .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.lesson .icon {
+  flex: 0 0 auto;
+}
+
+/* Top row: close, segmented progress, combo ------------------------------------------------ */
+
+.lesson-top-anchor {
+  scroll-margin-top: 7rem;
+}
+
+.lesson-top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--space-3) var(--space-4) 0;
+}
+
+.lesson .icon-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch);
+  height: var(--touch);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.lesson .icon-btn:hover:not(:disabled) {
+  background: var(--paper);
+}
+
+.lesson .icon-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.lesson-exit {
+  margin-left: calc(var(--space-3) * -1);
+}
+
+.lesson-segments {
+  flex: 1 1 auto;
+  display: flex;
+  gap: 3px;
+  min-width: 0;
+}
+
+.lesson-segment {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 10px;
+  border-radius: var(--radius-door);
+  background: var(--rule);
+}
+
+.lesson-segment.is-done {
+  background: var(--door);
+}
+
+/* Brass on plaster is 1.6:1, so the current segment also gets an ink edge to reach 3:1. */
+.lesson-segment.is-current {
+  background: var(--key);
+  border: 1px solid var(--ink);
+}
+
+.lesson-combo {
+  flex: 0 0 4.75rem;
+  text-align: right;
+  font-size: var(--text-meta);
+  line-height: var(--lh-meta);
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* The screen ------------------------------------------------------------------------------------ */
+
+.lesson-main {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4) var(--space-6);
+}
+
+/* A programmatic focus target (so a screen reader starts on the new screen), not a control. */
+.lesson-main:focus {
+  outline: none;
+}
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.lesson .reading {
+  max-width: 65ch;
+  font-size: var(--text-reading);
+  line-height: var(--lh-reading);
+}
+
+.lesson .reading p,
+.lesson .callout-body p,
+.lesson .question p,
+.lesson .sheet-note p,
+.lesson .sheet-why p {
+  margin: 0;
+}
+
+.lesson .reading p + p,
+.lesson .question p + p,
+.lesson .sheet-why p + p {
+  margin-top: var(--space-3);
+}
+
+.lesson .question {
+  font-size: var(--text-question);
+  line-height: var(--lh-question);
+  font-weight: 700;
+}
+
+.lesson .meta {
+  margin: 0;
+  font-size: var(--text-meta);
+  line-height: var(--lh-meta);
+  color: var(--ink-2);
+}
+
+/* Inline code reads as a small plate; code blocks reset it below. */
+.lesson code {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-door);
+  padding: 0 0.3em;
+}
+
+.lesson .option code,
+.lesson .tb-token code {
+  background: var(--plaster);
+}
+
+.lesson .code-block code,
+.lesson .editor code,
+.lesson .tb-template code {
+  background: none;
+  border: 0;
+  padding: 0;
+}
+
+.lesson .notice,
+.lesson .callout,
+.lesson .flash-answer {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-door);
+}
+
+.lesson .notice,
+.lesson .callout {
+  border-left: 3px solid var(--ink-2);
+}
+
+.lesson .callout {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.lesson .callout > .icon {
+  margin-top: 2px;
+  color: var(--ink-2);
+}
+
+.lesson .callout-body {
+  min-width: 0;
+}
+
+/* Code ------------------------------------------------------------------------------------------ */
+
+.lesson .code-block {
+  margin: 0;
+  background: var(--bench);
+  color: var(--bench-ink);
+  border-radius: var(--radius-door);
+  overflow: hidden;
+}
+
+.lesson .code-name {
+  padding: var(--space-1) var(--space-4);
+  background: var(--bench-2);
+  color: var(--bench-ink);
+  font-size: var(--text-meta);
+  line-height: var(--lh-meta);
+}
+
+.lesson .code-block pre {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  overflow-x: auto;
+}
+
+.lesson .code-block pre:focus-visible,
+.lesson .editor pre:focus-visible {
+  outline-color: var(--key);
+  outline-offset: -2px;
+}
+
+/* Typein: locked lines are muted, the editable region has a brass gutter bar. */
+.lesson .editor {
+  background: var(--bench);
+  color: var(--bench-ink);
+  border-radius: var(--radius-door);
+  overflow: hidden;
+}
+
+.lesson .editor .locked {
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  overflow-x: auto;
+  opacity: 0.6;
+}
+
+.lesson .code-field textarea {
+  display: block;
+  width: 100%;
+  min-height: calc(var(--lh-code) * 3 + var(--space-4));
+  margin: 0;
+  padding: var(--space-2) var(--space-4) var(--space-2) calc(var(--space-4) - 3px);
+  border: 0;
+  border-left: 3px solid var(--key);
+  border-radius: 0;
+  background: var(--bench-edit);
+  color: var(--bench-ink);
+  font-family: var(--font-code);
+  font-size: var(--text-code);
+  line-height: var(--lh-code);
+  tab-size: 2;
+  white-space: pre;
+  overflow-x: auto;
+  resize: vertical;
+}
+
+.lesson .code-field textarea:focus-visible {
+  outline: 2px solid var(--key);
+  outline-offset: -2px;
+}
+
+/* Option rows (mcq, predict, spotbug, multi) -------------------------------------------------- */
+
+.lesson .options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.lesson .option {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-height: var(--touch);
+  padding: var(--space-4);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+}
+
+.lesson .option:has(input:disabled) {
+  cursor: default;
+}
+
+.lesson .option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.lesson .option:has(input:focus-visible),
+.lesson .pulse-option:has(input:focus-visible) {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.lesson .option:hover:not(.option-picked, .option-right, .option-wrong) {
+  border-color: var(--ink-2);
+}
+
+/* A 2 px border without moving the text: a 1 px border plus a 1 px inset ring in the same colour. */
+.lesson .option-picked {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.lesson .option-right {
+  border-color: var(--door);
+  box-shadow: inset 0 0 0 1px var(--door);
+}
+
+.lesson .option-wrong {
+  border-color: var(--biro);
+  box-shadow: inset 0 0 0 1px var(--biro);
+}
+
+.lesson .option-key {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--plaster);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-door);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.lesson .option-picked .option-key {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+.lesson .option-right .option-key {
+  background: var(--door);
+  border-color: var(--door);
+  color: var(--paper);
+}
+
+.lesson .option-wrong .option-key {
+  background: var(--biro);
+  border-color: var(--biro);
+  color: var(--paper);
+}
+
+.lesson .option-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-top: 2px;
+  overflow-wrap: anywhere;
+}
+
+.lesson .option-mark {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  margin-left: auto;
+  padding-top: 2px;
+}
+
+.lesson .option-right .option-mark,
+.lesson .order-right .option-mark,
+.lesson .pair-right .option-mark {
+  color: var(--door);
+}
+
+.lesson .option-wrong .option-mark,
+.lesson .order-wrong .option-mark,
+.lesson .pair-wrong .option-mark {
+  color: var(--biro);
+}
+
+/* Tap-to-build ------------------------------------------------------------------------------------ */
+
+.lesson .tb-template {
+  padding: var(--space-4);
+  background: var(--bench);
+  color: var(--bench-ink);
+  border-radius: var(--radius-door);
+  font-family: var(--font-code);
+  font-size: var(--text-code);
+  line-height: 2.25rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.lesson .tb-slot {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 3.5rem;
+  height: 32px;
+  margin: 0 2px;
+  padding: 0 var(--space-2);
+  vertical-align: middle;
+  border: 1px dashed var(--bench-ink);
+  border-radius: var(--radius-control);
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  line-height: 1;
+  opacity: 0.7;
+}
+
+.lesson .tb-slot-filled {
+  border-style: solid;
+  border-color: var(--paper);
+  background: var(--paper);
+  opacity: 1;
+  cursor: pointer;
+}
+
+.lesson .tb-slot:disabled {
+  cursor: default;
+}
+
+.lesson .tb-slot:focus-visible {
+  outline-color: var(--key);
+}
+
+.lesson .tb-slot-right .icon {
+  color: var(--door);
+}
+
+.lesson .tb-slot-wrong .icon {
+  color: var(--biro);
+}
+
+.lesson .tb-bank {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.lesson .tb-token {
+  min-height: var(--touch);
+  padding: 0 var(--space-4);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-control);
+  color: var(--ink);
+  font-family: var(--font-code);
+  font-size: var(--text-code);
+  cursor: pointer;
+}
+
+.lesson .tb-token:hover:not(:disabled) {
+  border-color: var(--ink-2);
+}
+
+.lesson .tb-token-used {
+  background: none;
+  border-style: dashed;
+  color: transparent;
+  cursor: default;
+}
+
+.lesson .tb-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* Order ---------------------------------------------------------------------------------------------- */
+
+.lesson .order-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lesson .order-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 56px;
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-control);
+}
+
+.lesson .order-right {
+  border-color: var(--door);
+  box-shadow: inset 0 0 0 1px var(--door);
+}
+
+.lesson .order-wrong {
+  border-color: var(--biro);
+  box-shadow: inset 0 0 0 1px var(--biro);
+}
+
+.lesson .order-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.lesson .order-moves {
+  display: flex;
+  flex: 0 0 auto;
+  gap: var(--space-1);
+}
+
+/* Match ------------------------------------------------------------------------------------------------ */
+
+.lesson .match-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.lesson .match-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lesson .match-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 56px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-control);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lesson .match-cell:disabled {
+  cursor: default;
+}
+
+.lesson .match-cell:hover:not(:disabled, .match-selected) {
+  border-color: var(--ink-2);
+}
+
+.lesson .match-selected {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.lesson .match-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.lesson .match-badge {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: var(--ink);
+  border-radius: var(--radius-door);
+  color: var(--paper);
+  font-size: var(--text-meta);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.lesson .pair-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lesson .pair-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-control);
+}
+
+.lesson .pair-right {
+  border-color: var(--door);
+  box-shadow: inset 0 0 0 1px var(--door);
+}
+
+.lesson .pair-wrong {
+  border-color: var(--biro);
+  box-shadow: inset 0 0 0 1px var(--biro);
+}
+
+.lesson .pair-side {
+  flex: 1 1 7rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.lesson .pair-row .btn-text {
+  margin-left: auto;
+}
+
+/* Checklist ---------------------------------------------------------------------------------------------- */
+
+.lesson .checklist {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lesson .check-item {
+  padding: var(--space-3) var(--space-4);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-control);
+}
+
+.lesson .check-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-height: var(--touch);
+  padding: var(--space-1) 0;
+  cursor: pointer;
+}
+
+.lesson .check-row input {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  margin: 2px 0 0;
+  accent-color: var(--door);
+}
+
+.lesson .check-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding-left: calc(24px + var(--space-3));
+}
+
+.lesson .check-paste-label {
+  font-weight: 600;
+}
+
+.lesson .check-paste {
+  font-family: var(--font-code);
+  font-size: var(--text-code);
+  line-height: var(--lh-code);
+  resize: vertical;
+}
+
+.lesson .check-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--biro);
+}
+
+.lesson .check-hint .icon {
+  margin-top: 4px;
+}
+
+/* Bottom bar and feedback sheet ------------------------------------------------------------------- */
+
+.lesson-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  background: var(--paper);
+  border-top: 1px solid var(--rule);
+}
+
+.lesson-bar-inner {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--space-3) var(--space-4);
+  padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+}
+
+.lesson-sheet {
+  position: sticky;
+  bottom: 0;
+  z-index: 6;
+  border-radius: var(--radius-sheet);
+  box-shadow: var(--shadow-sheet);
+  animation: lesson-sheet-up 180ms ease-out;
+}
+
+.lesson-sheet.sheet-right {
+  background: var(--door-wash);
+}
+
+.lesson-sheet.sheet-wrong {
+  background: var(--biro-wash);
+}
+
+.lesson-sheet-inner {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--space-4);
+  padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
+}
+
+.lesson .sheet-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.lesson .sheet-right .sheet-head {
+  color: var(--door);
+}
+
+.lesson .sheet-wrong .sheet-head {
+  color: var(--biro);
+}
+
+.lesson .sheet-title {
+  margin: 0;
+  font-size: var(--text-question);
+  line-height: var(--lh-question);
+  font-weight: 700;
+}
+
+.lesson .sheet-note,
+.lesson .sheet-why {
+  margin-top: var(--space-2);
+}
+
+.lesson .sheet-note code,
+.lesson .sheet-why code {
+  background: var(--paper);
+}
+
+.lesson .sheet-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+@keyframes lesson-sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lesson-sheet {
+    animation: none;
+  }
+}
+
+/* End card ----------------------------------------------------------------------------------------------- */
+
+.lesson .end-card {
+  gap: var(--space-5);
+}
+
+.lesson .end-title {
+  margin: 0;
+  font-size: var(--text-screen);
+  line-height: var(--lh-screen);
+  font-weight: 700;
+}
+
+.lesson .end-lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-reading);
+  line-height: var(--lh-reading);
+}
+
+.lesson .pulse {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.lesson .pulse legend {
+  margin-bottom: var(--space-3);
+  padding: 0;
+}
+
+.lesson .pulse-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.lesson .pulse-option {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch);
+  padding: 0 var(--space-4);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-control);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lesson .pulse-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.lesson .pulse-option.is-picked {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.lesson .pulse .field {
+  margin-top: var(--space-4);
+}
+
+.lesson .pulse .form-error {
+  margin-top: var(--space-3);
+}
+
+@media (max-width: 479px) {
+  .lesson-bar-inner .btn {
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
+  }
+}

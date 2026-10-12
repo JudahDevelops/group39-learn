@@ -1,0 +1,139 @@
+/* The frame around the CodeMirror editor: tabs, the host, and the locked-part notice.
+   The editor's own colours and the locked/editable lines live in theme.ts. */
+
+.code-editor {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--bench);
+  color: var(--bench-ink);
+}
+
+.code-editor-fill {
+  height: 100%;
+}
+
+.editor-tabs {
+  flex: 0 0 auto;
+  display: flex;
+  overflow-x: auto;
+  background: var(--bench-2);
+}
+
+.editor-tab {
+  flex: 0 0 auto;
+  min-height: var(--touch);
+  padding: 0 var(--space-4);
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: none;
+  color: var(--bench-ink);
+  font: inherit;
+  opacity: 0.8;
+  cursor: pointer;
+}
+
+.editor-tab:hover {
+  opacity: 1;
+}
+
+.editor-tab[aria-selected='true'] {
+  background: var(--bench);
+  border-bottom-color: var(--key);
+  font-weight: 600;
+  opacity: 1;
+}
+
+.editor-host {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.code-editor-auto .editor-host {
+  flex: 0 0 auto;
+}
+
+.code-editor-auto .cm-editor {
+  max-height: 320px;
+}
+
+.editor-notice {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0;
+  background: var(--bench-2);
+  font-size: var(--text-meta);
+  line-height: var(--lh-meta);
+}
+
+.editor-notice:not(:empty) {
+  padding: var(--space-2) var(--space-4);
+}
+
+@media (min-width: 768px) {
+  .editor-tab {
+    min-height: 40px;
+  }
+}
+
+/* Try it ---------------------------------------------------------------- */
+
+.tryit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: var(--space-4) 0;
+  min-width: 0;
+}
+
+.tryit .code-editor {
+  border-radius: var(--radius-door);
+  overflow: hidden;
+}
+
+.tryit-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.tryit-hint,
+.tryit-note {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--text-meta);
+  line-height: var(--lh-meta);
+}
+
+.tryit-result {
+  min-height: 96px;
+  max-height: 480px;
+  height: 180px;
+  overflow: hidden;
+  resize: vertical;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-door);
+  background: #fff;
+}
+
+.tryit-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #fff;
+}
+
+.tryit-console {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  max-height: 160px;
+  overflow: auto;
+  border-radius: var(--radius-door);
+  background: var(--bench-2);
+  color: var(--bench-ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

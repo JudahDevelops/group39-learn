@@ -5,11 +5,14 @@ test('home shows the hero, today and an empty week', async ({ page }) => {
   await signInAndOnboard(page);
   const topbar = page.locator('header.topbar');
   await expect(topbar.getByText('Group 39 Learn')).toBeVisible();
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Build the Complaint Form');
-  await expect(page.getByRole('button', { name: /^Continue/ })).toBeVisible();
+  // The hero names the next block, whatever the course holds; home.spec.ts checks which one.
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: /^(Start this|Continue with step)/ }),
+  ).toBeVisible();
   await expect(page.getByRole('heading', { name: 'This week' })).toBeVisible();
   await expect(page.getByText('No XP yet this week. Continue your course to start.')).toBeVisible();
-  await expect(topbar.getByText('0-day streak')).toBeVisible();
+  await expect(topbar.getByText('No streak yet')).toBeVisible();
   await expect(topbar.getByText('0 of 60 XP today')).toBeVisible();
 });
 
@@ -47,9 +50,9 @@ test.describe('375 px phone', () => {
   test('top bar shortens its chips', async ({ page }) => {
     await signInAndOnboard(page);
     const topbar = page.locator('header.topbar');
-    await expect(topbar.getByText('0 days')).toBeVisible();
+    await expect(topbar.getByText('No streak', { exact: true })).toBeVisible();
     await expect(topbar.getByText('0/60 XP')).toBeVisible();
-    await expect(topbar.getByText('0-day streak')).toBeHidden();
+    await expect(topbar.getByText('No streak yet')).toBeHidden();
   });
 
   for (const path of ['/', '/learn', '/reference/glossary', '/leaderboard', '/signin']) {

@@ -7,6 +7,8 @@ export type Files = Record<string, string>;
 export interface TestResult {
   ok: boolean;
   message: string;
+  /** The assertion's own wording, e.g. "expected 0 to equal 1". For course authors; learners see `message`. */
+  detail?: string;
 }
 
 export interface RunOutput {

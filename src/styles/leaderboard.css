@@ -1,0 +1,61 @@
+/* Ranked list (home and leaderboard page) and the period tabs. */
+
+.board {
+  max-width: 560px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--rule);
+}
+
+.board-row {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+  align-items: baseline;
+  padding: var(--space-3) var(--space-2);
+  border-bottom: 1px solid var(--rule);
+  font-variant-numeric: tabular-nums;
+}
+
+.board-rank {
+  color: var(--ink-2);
+}
+
+.board-name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* The signed-in person: a paper row with an ink rule, and "(you)" in words. */
+.board-row.is-you {
+  background: var(--paper);
+  box-shadow: inset 3px 0 0 var(--ink);
+}
+
+.board-you {
+  font-weight: 400;
+  color: var(--ink-2);
+}
+
+.board-tabs {
+  display: flex;
+  gap: var(--space-2);
+  margin: var(--space-4) 0 var(--space-5);
+}
+
+.board-tab {
+  min-height: var(--touch);
+  padding: 0 var(--space-5);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-control);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.board-tab[aria-selected='true'] {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+  font-weight: 600;
+}

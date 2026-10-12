@@ -28,6 +28,7 @@ export function App() {
             <Route path="/" element={<Home />} />
             <Route path="/learn" element={<Learn />} />
             <Route path="/learn/:blockSlug/:itemId" element={<ItemPlayer />} />
+            <Route path="/reference" element={<Reference />} />
             <Route path="/reference/:page" element={<Reference />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/admin" element={<Admin />} />

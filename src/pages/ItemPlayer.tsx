@@ -3,6 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { fetchBlock } from '../content/loader';
 import type { Block } from '../content/schema';
 import { LessonPlayer } from '../players/lesson/LessonPlayer';
+import { ProjectPage } from '../players/project/ProjectPage';
+import { QuizPlayer } from '../players/quiz/QuizPlayer';
+import { ReviewPlayer } from '../players/review/ReviewPlayer';
 import { LabPlayer } from '../players/workshop/LabPlayer';
 import { WorkshopPlayer } from '../players/workshop/WorkshopPlayer';
 
@@ -61,12 +64,20 @@ export function ItemPlayer() {
       );
     case 'lab':
       return <LabPlayer block={block} itemId={itemId} onExit={onExit} onNavigate={onNavigate} />;
-    default:
+    case 'quiz':
+    case 'exam':
       return (
-        <div className="page">
-          <h1>{block.meta.title}</h1>
-          <p>This part of the course opens in a later update.</p>
-        </div>
+        <QuizPlayer
+          key={block.meta.id}
+          block={block}
+          itemId={itemId}
+          onExit={onExit}
+          onNavigate={onNavigate}
+        />
       );
+    case 'review':
+      return <ReviewPlayer block={block} itemId={itemId} onExit={onExit} onNavigate={onNavigate} />;
+    case 'project':
+      return <ProjectPage block={block} itemId={itemId} onExit={onExit} onNavigate={onNavigate} />;
   }
 }

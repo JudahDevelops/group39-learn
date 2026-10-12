@@ -1,0 +1,355 @@
+/* Quiz and exam player, from docs/design.md "Lesson player" and "Option row". */
+
+.quiz {
+  display: flex;
+  min-height: calc(100dvh - var(--topbar-height));
+}
+
+.quiz-column {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Content sits in a centred 640 px column; the bottom bar and sheet run edge to edge. */
+.quiz-top,
+.quiz-body,
+.quiz-band,
+.quiz-actions,
+.quiz-review {
+  width: calc(100% - 2 * var(--space-4));
+  max-width: 640px;
+  margin-inline: auto;
+}
+
+.quiz-top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+}
+
+.quiz-close {
+  flex: 0 0 auto;
+  width: var(--touch);
+  height: var(--touch);
+  margin-left: calc(var(--space-2) * -1);
+  border: 0;
+  border-radius: var(--radius-control);
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-question);
+  cursor: pointer;
+}
+
+.quiz-progress {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 3px;
+}
+
+.quiz-progress span {
+  flex: 1 1 0;
+  height: 8px;
+  border-radius: var(--radius-door);
+  background: var(--rule);
+}
+
+.quiz-progress .is-done {
+  background: var(--door);
+}
+
+.quiz-progress .is-current {
+  background: var(--key);
+}
+
+.quiz-count {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--text-meta);
+  line-height: var(--lh-meta);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.quiz-body {
+  flex: 1 1 auto;
+  padding: var(--space-5) 0 var(--space-6);
+}
+
+.quiz-question {
+  margin-bottom: var(--space-5);
+  font-size: var(--text-question);
+  line-height: var(--lh-question);
+  font-weight: 700;
+}
+
+.quiz-question p {
+  margin: 0;
+}
+
+.quiz-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.quiz-option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: var(--touch);
+  padding: var(--space-4);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-control);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.option-key {
+  display: inline-flex;
+  flex: 0 0 28px;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-door);
+  font-weight: 700;
+}
+
+.option-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-top: 2px;
+  overflow-wrap: anywhere;
+}
+
+.option-mark {
+  flex: 0 0 auto;
+  font-size: var(--text-question);
+  line-height: 1.5rem;
+  font-weight: 800;
+}
+
+/* Picked, not yet checked: a 2 px ink border. */
+.quiz-option.is-selected {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.quiz-option.is-selected .option-key {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* After Check: the border and a mark, so colour is never the only signal. */
+.quiz-option.is-right {
+  border-color: var(--door);
+  box-shadow: inset 0 0 0 1px var(--door);
+}
+
+.quiz-option.is-right .option-mark {
+  color: var(--door);
+}
+
+.quiz-option.is-wrong {
+  border-color: var(--biro);
+  box-shadow: inset 0 0 0 1px var(--biro);
+}
+
+.quiz-option.is-wrong .option-mark {
+  color: var(--biro);
+}
+
+/* Bottom bar and feedback sheet --------------------------------------------- */
+
+.quiz-bar {
+  position: sticky;
+  bottom: 0;
+  border-top: 1px solid var(--rule);
+  background: var(--paper);
+}
+
+.quiz-bar-inner {
+  display: flex;
+  justify-content: flex-end;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--space-3) var(--space-4);
+}
+
+.quiz-sheet {
+  position: sticky;
+  bottom: 0;
+  border-radius: var(--radius-sheet);
+  background: var(--door-wash);
+  box-shadow: var(--shadow-sheet);
+  animation: sheet-up 180ms ease-out;
+}
+
+.quiz-sheet.is-wrong {
+  background: var(--biro-wash);
+}
+
+.quiz-sheet-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-4) var(--space-5);
+}
+
+.quiz-sheet h2 {
+  margin: 0;
+  color: var(--door);
+  font-size: var(--text-question);
+  line-height: var(--lh-question);
+  font-weight: 700;
+}
+
+.quiz-sheet.is-wrong h2 {
+  color: var(--biro);
+}
+
+.quiz-sheet-body p {
+  margin: 0;
+}
+
+.quiz-sheet .btn {
+  align-self: flex-end;
+  margin-top: var(--space-2);
+}
+
+/* The sheet takes focus after Check so a screen reader reads it; keep the ring inside the edges. */
+.quiz-sheet:focus-visible {
+  outline-offset: -2px;
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* End screen ------------------------------------------------------------------ */
+
+.quiz-band {
+  margin-top: var(--space-6);
+  padding: var(--space-5);
+  border-left: 3px solid var(--door);
+  border-radius: var(--radius-door);
+  background: var(--door-wash);
+}
+
+.quiz-band.is-fail {
+  border-left-color: var(--biro);
+  background: var(--biro-wash);
+}
+
+.quiz-band h1 {
+  margin: 0;
+  font-size: var(--text-screen);
+  line-height: var(--lh-screen);
+  font-weight: 700;
+}
+
+.quiz-band p {
+  margin: var(--space-2) 0 0;
+}
+
+.quiz-save-error .btn {
+  margin-left: var(--space-2);
+}
+
+.quiz-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.quiz-review {
+  padding-bottom: var(--space-8);
+}
+
+.quiz-review h2 {
+  margin: var(--space-8) 0 var(--space-4);
+  font-size: var(--text-page);
+  line-height: var(--lh-page);
+  font-weight: 700;
+}
+
+.quiz-review ol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A correction slip: paper with a 3 px biro rule. */
+.quiz-missed {
+  padding: var(--space-4);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--biro);
+  border-radius: var(--radius-door);
+  background: var(--paper);
+}
+
+.quiz-missed-question {
+  font-weight: 700;
+}
+
+.quiz-missed p,
+.quiz-missed-question p {
+  margin: 0;
+}
+
+.quiz-line {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.quiz-line-mark {
+  flex: 0 0 auto;
+  font-weight: 800;
+}
+
+.quiz-line.is-wrong .quiz-line-mark {
+  color: var(--biro);
+}
+
+.quiz-line.is-right .quiz-line-mark {
+  color: var(--door);
+}
+
+.quiz-why {
+  margin-top: var(--space-3);
+  color: var(--ink-2);
+}
+
+@media (max-width: 479px) {
+  .quiz-band {
+    padding: var(--space-4);
+  }
+
+  .quiz-band h1 {
+    font-size: var(--text-page);
+    line-height: var(--lh-page);
+  }
+}

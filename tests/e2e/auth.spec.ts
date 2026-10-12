@@ -83,7 +83,7 @@ test('sign in, onboarding, then home shows the chosen display name', async ({ pa
   await expect(page).toHaveURL('/');
   await expect(topbar(page).getByText('Ada Okafor')).toBeVisible();
   await expect(topbar(page).getByText('0 of 100 XP today')).toBeVisible();
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Build the Complaint Form');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
   const saved = await page.evaluate(() =>
     JSON.parse(window.localStorage.getItem('g39.profile') ?? 'null'),

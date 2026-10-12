@@ -204,7 +204,7 @@ Write the message so it tells the learner what to fix, not what the test does ("
 
 | Runner | Fence | What the test body can use | Default file names |
 |---|---|---|---|
-| `web` | `js` | The body of a function run inside the preview iframe. `document`, `window`, `code` (the learner's source) and chai's `assert` | `index.html`, `styles.css`, `script.js` |
+| `web` | `js` | The body of an async function run in a hidden sandboxed iframe once the page has loaded (so `await` works). `document`, `window`, `code` (the learner's `index.html`, or every file joined when there is no HTML), `files` (every file's text, e.g. `files['styles.css']`) and chai's `assert` | `index.html`, `styles.css`, `script.js` |
 | `python` | `py` | Python run after the learner's code in the same namespace. `_code`, `_stdout`, `_tree`, `has_function(name)`, `defines(name)`, `prints(text)`. A failed `assert` returns the message | `main.py` |
 | `sql` | `js` | An async function body with `db` (`await db.query(...)`), `code` and `assert` | `query.sql` (plus `setup.sql`) |
 | `fastapi` | `py` | Async Python with `client`, an `httpx.AsyncClient` bound to `app` | `main.py` |

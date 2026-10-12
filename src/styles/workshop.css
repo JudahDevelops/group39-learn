@@ -1,0 +1,608 @@
+/* Workshop and lab player, from docs/design.md ("Workshop and lab player", "Correction slip").
+   Colours are state only: green is done or primary, brass is "you are here", red is something to fix. */
+
+.wk-player {
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - var(--wk-top, var(--topbar-height)));
+  min-height: 480px;
+  min-width: 0;
+  background: var(--plaster);
+}
+
+.wk-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.wk-loading {
+  flex: 1 1 auto;
+}
+
+/* Player bar ------------------------------------------------------------ */
+
+.wk-bar {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  min-height: 52px;
+  padding: var(--space-2) var(--space-4);
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+}
+
+.wk-title {
+  margin: 0;
+  min-width: 0;
+  font-size: var(--text-question);
+  line-height: var(--lh-question);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.wk-position {
+  font-size: var(--text-meta);
+  line-height: var(--lh-meta);
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.wk-segments {
+  flex: 1 1 140px;
+  max-width: 360px;
+  display: flex;
+  gap: 2px;
+}
+
+.wk-segment {
+  flex: 1 1 0;
+  min-width: 2px;
+  height: 8px;
+  background: var(--rule);
+}
+
+.wk-segment-done {
+  background: var(--door);
+}
+
+.wk-segment-current {
+  background: var(--key);
+}
+
+.wk-help-button {
+  margin-left: auto;
+}
+
+/* Panes ----------------------------------------------------------------- */
+
+.wk-workspace {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.wk-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.wk-pane {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.wk-pane[hidden],
+.wk-preview[hidden],
+.wk-console[hidden] {
+  display: none;
+}
+
+.wk-instructions {
+  background: var(--paper);
+}
+
+.wk-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--space-5);
+}
+
+.wk-editor {
+  background: var(--bench);
+}
+
+.wk-editor-body {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.wk-output-pane {
+  background: var(--bench);
+}
+
+/* Wide: three panes with draggable dividers (the column widths are set inline). */
+.wk-divider {
+  position: relative;
+  cursor: col-resize;
+  touch-action: none;
+  background: var(--plaster);
+}
+
+.wk-divider::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 4px;
+  width: 2px;
+  background: var(--rule);
+}
+
+.wk-divider:hover::before {
+  background: var(--ink-2);
+}
+
+.wk-dragging {
+  user-select: none;
+}
+
+.wk-dragging iframe {
+  pointer-events: none;
+}
+
+/* Medium: instructions on top, editor and preview side by side below. */
+.wk-medium .wk-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 38%) minmax(0, 1fr);
+}
+
+.wk-medium .wk-instructions {
+  grid-column: 1 / -1;
+  border-bottom: 1px solid var(--rule);
+}
+
+/* Narrow: three tabs, one pane at a time. */
+.wk-narrow .wk-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.wk-tabs {
+  flex: 0 0 auto;
+  display: flex;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+}
+
+.wk-tab {
+  flex: 1 1 0;
+  min-height: var(--touch);
+  padding: 0 var(--space-2);
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.wk-tab[aria-selected='true'] {
+  color: var(--ink);
+  border-bottom-color: var(--door);
+}
+
+.wk-bottom {
+  flex: 0 0 auto;
+  max-height: 50%;
+  overflow: auto;
+  background: var(--paper);
+  border-top: 1px solid var(--rule);
+}
+
+.wk-bottom .wk-slip-region {
+  margin: 0;
+  padding: var(--space-3) var(--space-4) 0;
+}
+
+.wk-bottom .wk-actions {
+  border-top: 0;
+}
+
+/* Instructions text ------------------------------------------------------- */
+
+.wk-text {
+  max-width: 62ch;
+  font-size: var(--text-reading);
+  line-height: var(--lh-reading);
+}
+
+.wk-text > :first-child {
+  margin-top: 0;
+}
+
+.wk-text p {
+  margin: 0 0 var(--space-3);
+}
+
+.wk-text code,
+.wk-slip-text code,
+.wk-test-text code {
+  padding: 0 0.25em;
+  border-radius: var(--radius-door);
+  background: var(--plaster);
+}
+
+.wk-subhead {
+  margin: var(--space-5) 0 var(--space-2);
+  font-size: var(--text-question);
+  line-height: var(--lh-question);
+  font-weight: 700;
+}
+
+.wk-stories {
+  margin: 0 0 var(--space-4);
+  padding-left: var(--space-5);
+  max-width: 62ch;
+  font-size: var(--text-reading);
+  line-height: var(--lh-reading);
+}
+
+.wk-story {
+  margin-bottom: var(--space-2);
+  padding-left: var(--space-1);
+}
+
+.wk-demo-button {
+  margin-top: var(--space-2);
+}
+
+/* Check, Reset ------------------------------------------------------------- */
+
+.wk-actions {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--paper);
+  border-top: 1px solid var(--rule);
+}
+
+.wk-keyhint {
+  font-size: var(--text-meta);
+  line-height: var(--lh-meta);
+  color: var(--ink-2);
+}
+
+.wk-reset {
+  margin-left: auto;
+}
+
+.wk-reset-icon {
+  margin-right: var(--space-1);
+}
+
+/* Correction slip ----------------------------------------------------------- */
+
+.wk-slip-region {
+  margin-top: var(--space-4);
+}
+
+.wk-slip-region:empty {
+  margin-top: 0;
+}
+
+.wk-slip {
+  padding: var(--space-3) var(--space-4);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--biro);
+}
+
+.wk-slip-text {
+  margin: 0;
+  max-width: 62ch;
+  font-size: var(--text-ui);
+  line-height: var(--lh-ui);
+}
+
+.wk-slip-text p {
+  margin: 0;
+}
+
+.wk-slip-pass {
+  background: var(--door-wash);
+  border-color: var(--door-wash);
+  border-left-color: var(--door);
+}
+
+.wk-slip-title {
+  margin: 0;
+  font-size: var(--text-question);
+  line-height: var(--lh-question);
+  font-weight: 700;
+  color: var(--door);
+}
+
+.wk-slip-meta {
+  margin: 0 0 var(--space-3);
+}
+
+/* Lab test list -------------------------------------------------------------- */
+
+.wk-results-count {
+  margin: 0 0 var(--space-2);
+  color: var(--ink-2);
+}
+
+.wk-tests {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wk-test {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  max-width: 62ch;
+}
+
+.wk-test-icon {
+  flex: 0 0 auto;
+  width: 1.5rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.wk-test-ok .wk-test-icon {
+  color: var(--door);
+}
+
+.wk-test-fail .wk-test-icon {
+  color: var(--biro);
+}
+
+/* Output pane ---------------------------------------------------------------- */
+
+.wk-output {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--bench);
+  color: var(--bench-ink);
+}
+
+.wk-output-tabs {
+  flex: 0 0 auto;
+  display: flex;
+  background: var(--bench-2);
+}
+
+.wk-output-tab {
+  min-height: var(--touch);
+  padding: 0 var(--space-4);
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: none;
+  color: var(--bench-ink);
+  font: inherit;
+  opacity: 0.8;
+  cursor: pointer;
+}
+
+.wk-output-tab:hover {
+  opacity: 1;
+}
+
+.wk-output-tab[aria-selected='true'] {
+  background: var(--bench);
+  border-bottom-color: var(--key);
+  font-weight: 600;
+  opacity: 1;
+}
+
+.wk-preview {
+  flex: 1 1 auto;
+  min-height: 0;
+  background: #fff;
+}
+
+.web-preview {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #fff;
+}
+
+.wk-console {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--space-3) var(--space-4);
+}
+
+.wk-console pre {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.wk-output-note {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--text-meta);
+  line-height: var(--lh-meta);
+}
+
+.wk-output .wk-output-note {
+  padding: var(--space-4);
+  color: var(--bench-ink);
+}
+
+/* Modals ---------------------------------------------------------------------- */
+
+.wk-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(20, 32, 27, 0.45);
+  animation: wk-fade 120ms ease-out;
+}
+
+@keyframes wk-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+.wk-modal {
+  width: min(560px, 100%);
+  max-height: 88dvh;
+  overflow: auto;
+  padding: var(--space-5);
+  background: var(--paper);
+  border-radius: var(--radius-sheet);
+  box-shadow: var(--shadow-sheet);
+}
+
+.wk-modal-wide {
+  display: flex;
+  flex-direction: column;
+  width: min(1000px, 100%);
+  height: 88dvh;
+}
+
+.wk-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.wk-modal-head h2 {
+  margin: 0;
+  font-size: var(--text-question);
+  line-height: var(--lh-question);
+  font-weight: 700;
+}
+
+.wk-modal-body {
+  min-height: 0;
+}
+
+.wk-modal-wide .wk-modal-body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.wk-demo {
+  flex: 1 1 auto;
+  min-height: 0;
+  border: 1px solid var(--rule);
+  background: #fff;
+}
+
+.wk-demo-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #fff;
+}
+
+.wk-hints {
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  list-style: none;
+}
+
+.wk-hints li {
+  margin-bottom: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-control);
+}
+
+.wk-hint-label {
+  margin: 0 0 var(--space-1);
+  font-weight: 700;
+}
+
+.wk-help-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.wk-integrity {
+  margin: 0 0 var(--space-2);
+  font-weight: 600;
+}
+
+.wk-help-note {
+  margin: 0;
+  font-size: var(--text-meta);
+  line-height: var(--lh-meta);
+  color: var(--ink-2);
+}
+
+/* Workshop done / missing step -------------------------------------------------- */
+
+.wk-done {
+  max-width: 640px;
+  margin: var(--space-8) auto;
+  padding: 0 var(--space-4);
+}
+
+.wk-done h1 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-screen);
+  line-height: var(--lh-screen);
+}
+
+.wk-done .wk-text {
+  margin-bottom: var(--space-5);
+}
+
+@media (max-width: 767px) {
+  /* A phone has no Ctrl key. */
+  .wk-keyhint {
+    display: none;
+  }
+
+  .wk-scroll {
+    padding: var(--space-4);
+  }
+
+  .wk-modal {
+    padding: var(--space-4);
+  }
+}

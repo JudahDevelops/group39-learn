@@ -1,0 +1,188 @@
+/**
+ * Reads the built course from the running site (/content/..., which `pretest:e2e` builds with the
+ * fixture track), so the specs can say what a door or the home hero should show without copying
+ * titles and ids by hand. Also seeds progress straight into LocalStore's localStorage, for states
+ * that would take many clicks to reach.
+ *
+ * Specs import `test` and `expect` from here and ask for the `course` fixture.
+ */
+import { expect, test as base, type APIRequestContext, type Page } from '@playwright/test';
+
+/** LocalStore's one user. */
+const USER_ID = 'local-dev-user';
+
+export interface BuiltSummary {
+  id: string;
+  slug: string;
+  type: string;
+  title: string;
+  roomCode: string;
+  itemCount: number;
+  estMinutes: number;
+  optional?: boolean;
+}
+
+interface BuiltCurriculum {
+  tracks: { id: string; chapters: { id: string; blocks: BuiltSummary[] }[] }[];
+}
+
+export interface BuiltQuiz {
+  draw: number;
+  pass: number;
+  questions: {
+    id: string;
+    text: string;
+    distractors: string[];
+    answer: string;
+    explanation: string;
+  }[];
+}
+
+export interface Entry {
+  userId: string;
+  itemId: string;
+  blockId: string;
+  completedAt: string;
+}
+
+const TRACK_RANK: Record<string, number> = { A: 0, B: 1, Z: 2 };
+
+export class BuiltCourse {
+  private constructor(
+    private readonly blocks: (BuiltSummary & { trackId: string })[],
+    private readonly steps: Map<string, string[]>,
+    private readonly quizzes: Map<string, BuiltQuiz>,
+  ) {}
+
+  /** Fetches the curriculum, then the step ids of every workshop and the questions of every quiz. */
+  static async load(request: APIRequestContext): Promise<BuiltCourse> {
+    const getJson = async <T>(path: string): Promise<T> => {
+      const response = await request.get(`/content/${path}`);
+      expect(response.ok(), `GET /content/${path}`).toBe(true);
+      return (await response.json()) as T;
+    };
+    const { tracks } = await getJson<BuiltCurriculum>('curriculum.json');
+    const blocks = [...tracks]
+      .sort((a, b) => TRACK_RANK[a.id] - TRACK_RANK[b.id])
+      .flatMap((track) =>
+        track.chapters.flatMap((chapter) =>
+          chapter.blocks.map((block) => ({ ...block, trackId: track.id })),
+        ),
+      );
+    const steps = new Map<string, string[]>();
+    const quizzes = new Map<string, BuiltQuiz>();
+    await Promise.all(
+      blocks.map(async (block) => {
+        if (block.type === 'workshop') {
+          const built = await getJson<{ steps: { id: string }[] }>(`blocks/${block.slug}.json`);
+          steps.set(
+            block.slug,
+            built.steps.map((s) => s.id),
+          );
+        } else if (block.type === 'quiz' || block.type === 'exam') {
+          const built = await getJson<{ quiz: BuiltQuiz }>(`blocks/${block.slug}.json`);
+          quizzes.set(block.slug, built.quiz);
+        }
+      }),
+    );
+    return new BuiltCourse(blocks, steps, quizzes);
+  }
+
+  /** Every block in course order (A, B, then Z). */
+  order(): (BuiltSummary & { trackId: string })[] {
+    return this.blocks;
+  }
+
+  summary(slug: string): BuiltSummary {
+    const found = this.blocks.find((b) => b.slug === slug);
+    if (!found) throw new Error(`no built block "${slug}"; run INCLUDE_FIXTURES=1 npm run content`);
+    return found;
+  }
+
+  /** The item ids of a block: its step ids for a workshop, otherwise its own id. */
+  itemIds(slug: string): string[] {
+    return this.steps.get(slug) ?? [this.summary(slug).id];
+  }
+
+  quiz(slug: string): BuiltQuiz {
+    const found = this.quizzes.get(slug);
+    if (!found) throw new Error(`"${slug}" is not a built quiz or exam`);
+    return found;
+  }
+
+  /** Completed-progress rows for a block: all its items, or only the first `count` of them. */
+  doneEntries(slug: string, count?: number): Entry[] {
+    const blockId = this.summary(slug).id;
+    return this.itemIds(slug)
+      .slice(0, count)
+      .map((itemId) => ({
+        userId: USER_ID,
+        itemId,
+        blockId,
+        completedAt: new Date().toISOString(),
+      }));
+  }
+
+  /** Rows that finish every block outside the fixture track, so the first fixture is next up. */
+  realCourseEntries(): Entry[] {
+    return this.blocks.filter((b) => b.trackId !== 'Z').flatMap((b) => this.doneEntries(b.slug));
+  }
+}
+
+let loaded: Promise<BuiltCourse> | null = null;
+
+export const test = base.extend<{ course: BuiltCourse }>({
+  // The build does not change during a run, so each worker loads it once.
+  course: async ({ request }, provide) => {
+    loaded ??= BuiltCourse.load(request);
+    await provide(await loaded);
+  },
+});
+
+export { expect };
+
+/** Text of build-time HTML as the learner reads it (tags removed, entities decoded). */
+export function plain(html: string): string {
+  const named: Record<string, string> = {
+    lt: '<',
+    gt: '>',
+    quot: '"',
+    apos: "'",
+    amp: '&',
+  };
+  return html
+    .replace(/<[^>]+>/g, '')
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex: string) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec: string) => String.fromCodePoint(Number(dec)))
+    .replace(/&(lt|gt|quot|apos|amp);/g, (_, name: string) => named[name])
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** Writes progress rows into localStorage. Load a page afterwards: the app reads them on load. */
+export async function seedProgress(page: Page, entries: Entry[]): Promise<void> {
+  await page.evaluate((rows) => {
+    const key = 'g39.progress';
+    const old = JSON.parse(window.localStorage.getItem(key) ?? '[]') as unknown[];
+    window.localStorage.setItem(key, JSON.stringify([...old, ...rows]));
+  }, entries);
+}
+
+/** Writes one XP event (now) for the signed-in person. */
+export async function seedXp(page: Page, amount: number, reason: string): Promise<void> {
+  await page.evaluate(
+    ({ userId, amount: xp, reason: why }) => {
+      const key = 'g39.xpEvents';
+      const old = JSON.parse(window.localStorage.getItem(key) ?? '[]') as unknown[];
+      const event = {
+        userId,
+        itemId: 'seeded-item',
+        reason: why,
+        amount: xp,
+        createdAt: new Date().toISOString(),
+      };
+      window.localStorage.setItem(key, JSON.stringify([...old, event]));
+    },
+    { userId: USER_ID, amount, reason },
+  );
+}

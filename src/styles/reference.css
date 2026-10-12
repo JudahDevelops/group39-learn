@@ -1,0 +1,75 @@
+/* Reference pages. Table, code and heading styles are `.prose` in review.css. */
+
+.ref-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-width: 560px;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ref-list a {
+  display: flex;
+  align-items: center;
+  min-height: var(--touch);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-control);
+  background: var(--paper);
+  font-size: var(--text-question);
+  line-height: var(--lh-question);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.ref-list a:hover {
+  border-color: var(--ink);
+}
+
+.ref-nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-4) 0 var(--space-5);
+  padding: 0;
+  list-style: none;
+}
+
+.ref-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-control);
+  background: var(--paper);
+  text-decoration: none;
+}
+
+.ref-nav a:hover {
+  border-color: var(--ink);
+}
+
+.ref-nav a[aria-current='page'] {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+  font-weight: 600;
+}
+
+.ref-article > h2 {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-page);
+  line-height: var(--lh-page);
+  font-weight: 700;
+}
+
+.ref-body h3 {
+  font-size: var(--text-question);
+  line-height: var(--lh-question);
+}
+
+.page.page-reference {
+  padding-bottom: var(--space-8);
+}

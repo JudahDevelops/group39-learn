@@ -1,0 +1,153 @@
+/* Review player, and `.prose`: reading text built from markdown (reviews and reference pages). */
+
+.review {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-4) var(--space-4) var(--space-8);
+}
+
+.review-column {
+  width: 100%;
+  max-width: 720px;
+  min-width: 0;
+}
+
+.review-back {
+  margin-left: calc(var(--space-2) * -1);
+}
+
+.review-column h1 {
+  margin: var(--space-3) 0 var(--space-5);
+  font-size: var(--text-page);
+  line-height: var(--lh-page);
+  font-weight: 700;
+}
+
+.review-body .tryit {
+  margin: 0 0 var(--space-4);
+}
+
+.review-done {
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--rule);
+}
+
+.review-read {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-left: 3px solid var(--door);
+  border-radius: var(--radius-door);
+  background: var(--door-wash);
+}
+
+.review-done .form-error {
+  margin-top: var(--space-3);
+}
+
+/* Prose --------------------------------------------------------------------- */
+
+.prose {
+  font-size: var(--text-reading);
+  line-height: var(--lh-reading);
+}
+
+.prose > :first-child {
+  margin-top: 0;
+}
+
+.prose h2 {
+  margin: var(--space-6) 0 var(--space-2);
+  font-size: var(--text-question);
+  line-height: var(--lh-question);
+  font-weight: 700;
+}
+
+.prose h3 {
+  margin: var(--space-5) 0 var(--space-1);
+  font-size: var(--text-reading);
+  line-height: var(--lh-reading);
+  font-weight: 700;
+}
+
+.prose p,
+.prose ul,
+.prose ol {
+  max-width: 66ch;
+  margin: 0 0 var(--space-4);
+}
+
+.prose li + li {
+  margin-top: var(--space-1);
+}
+
+.prose :not(pre) > code {
+  padding: 0 4px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-door);
+  background: var(--paper);
+}
+
+.prose pre {
+  margin: 0 0 var(--space-4);
+  padding: var(--space-4);
+  overflow-x: auto;
+  border-radius: var(--radius-door);
+  background: var(--bench);
+  color: var(--bench-ink);
+}
+
+.prose pre code {
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-ui);
+  line-height: var(--lh-ui);
+}
+
+.prose th,
+.prose td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--rule);
+  text-align: left;
+  vertical-align: top;
+}
+
+.prose th {
+  font-weight: 700;
+}
+
+.prose tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* Reference tables come wrapped in .table-wrap; a table straight from markdown scrolls itself. */
+.prose .table-wrap,
+.prose > table {
+  display: block;
+  max-width: 100%;
+  margin: 0 0 var(--space-4);
+  overflow-x: auto;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-door);
+  background: var(--paper);
+}
+
+.prose > table {
+  width: fit-content;
+}
+
+.prose .table-wrap table {
+  min-width: 100%;
+}
+
+/* A first column that is a short label or term keeps its words together. */
+.prose th:first-child,
+.prose td:first-child {
+  min-width: 8rem;
+}
