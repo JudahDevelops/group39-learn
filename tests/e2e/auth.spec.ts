@@ -14,6 +14,7 @@ test.describe('signed out', () => {
     '/leaderboard',
     '/admin',
     '/onboarding',
+    '/profile',
     '/no-such-page',
   ]) {
     test(`${path} redirects to /signin`, async ({ page }) => {
@@ -140,6 +141,101 @@ test('after sign-in you land where you were headed', async ({ page }) => {
   await expect(page).toHaveURL('/leaderboard');
 });
 
+test.describe('profile page', () => {
+  test('is in the top bar, starts with what you chose, and saves changes', async ({ page }) => {
+    await signInAndOnboard(page, { name: 'Ada Okafor', goal: 100 });
+    await topbar(page).getByRole('link', { name: 'Your profile' }).click();
+    await expect(page).toHaveURL('/profile');
+    await expect(page.getByRole('heading', { name: 'Your profile' })).toBeVisible();
+
+    // The form starts with the saved values.
+    await expect(page.getByLabel('Display name')).toHaveValue('Ada Okafor');
+    await expect(page.getByRole('radio', { name: /^100 XP a day/ })).toBeChecked();
+    await expect(page.getByLabel('GitHub username')).toHaveValue('');
+
+    await page.getByLabel('Display name').fill('Ada O.');
+    await page.getByRole('radio', { name: /^150 XP a day/ }).check();
+    await page.getByLabel('GitHub username').fill('@ada-o');
+    await page.getByRole('button', { name: 'Save changes' }).click();
+
+    await expect(page.getByRole('status')).toHaveText('Saved. Your changes are in the top bar.');
+    await expect(topbar(page).getByText('Ada O.')).toBeVisible();
+    await expect(topbar(page).getByText('0 of 150 XP today')).toBeVisible();
+    const saved = await page.evaluate(() =>
+      JSON.parse(window.localStorage.getItem('g39.profile') ?? 'null'),
+    );
+    expect(saved).toMatchObject({
+      displayName: 'Ada O.',
+      dailyGoalXp: 150,
+      githubUsername: 'ada-o',
+    });
+
+    // The message describes what was saved, so editing again removes it.
+    await page.getByLabel('Display name').fill('Ada Okafor');
+    await expect(page.getByRole('status')).toHaveCount(0);
+
+    // Saved changes survive a reload and fill the form again.
+    await page.reload();
+    await expect(page).toHaveURL('/profile');
+    await expect(page.getByLabel('Display name')).toHaveValue('Ada O.');
+    await expect(page.getByRole('radio', { name: /^150 XP a day/ })).toBeChecked();
+    await expect(page.getByLabel('GitHub username')).toHaveValue('ada-o');
+  });
+
+  test('a GitHub username can be changed or removed later', async ({ page }) => {
+    await signInAndOnboard(page, { name: 'Ada Okafor' });
+    await page.goto('/profile');
+    await page.getByLabel('GitHub username').fill('https://github.com/ada-o');
+    await page.getByRole('button', { name: 'Save changes' }).click();
+    await expect(page.getByRole('status')).toBeVisible();
+
+    await page.getByLabel('GitHub username').fill('');
+    await page.getByRole('button', { name: 'Save changes' }).click();
+    await expect(page.getByRole('status')).toBeVisible();
+    const saved = await page.evaluate(() =>
+      JSON.parse(window.localStorage.getItem('g39.profile') ?? 'null'),
+    );
+    expect(saved).toMatchObject({ githubUsername: null });
+  });
+
+  test('refuses a blank name or a bad GitHub username and keeps what was saved', async ({
+    page,
+  }) => {
+    await signInAndOnboard(page, { name: 'Ada Okafor' });
+    await page.goto('/profile');
+
+    await page.getByLabel('Display name').fill('   ');
+    await page.getByRole('button', { name: 'Save changes' }).click();
+    await expect(page.getByRole('alert')).toHaveText(
+      'Enter a display name. The group sees it on the leaderboard.',
+    );
+
+    await page.getByLabel('Display name').fill('Ada O.');
+    await page.getByLabel('GitHub username').fill('-nope-');
+    await page.getByRole('button', { name: 'Save changes' }).click();
+    await expect(page.getByRole('alert')).toContainText(
+      'A GitHub username has letters, numbers and hyphens only',
+    );
+
+    await expect(topbar(page).getByText('Ada Okafor')).toBeVisible();
+    const saved = await page.evaluate(() =>
+      JSON.parse(window.localStorage.getItem('g39.profile') ?? 'null'),
+    );
+    expect(saved).toMatchObject({ displayName: 'Ada Okafor', githubUsername: null });
+  });
+
+  test('is not open until onboarding is done', async ({ page }) => {
+    await page.goto('/signin');
+    await page.getByLabel('Email').fill('ada@example.com');
+    await page.getByLabel('Password').fill('anything');
+    await page.getByRole('button', { name: 'Sign in' }).click();
+    await expect(page).toHaveURL('/onboarding');
+    await page.goto('/profile');
+    await expect(page).toHaveURL('/onboarding');
+    await expect(topbar(page).getByRole('link', { name: 'Your profile' })).toHaveCount(0);
+  });
+});
+
 test.describe('set password', () => {
   test('checks the two boxes, then continues to onboarding or home', async ({ page }) => {
     await signInAndOnboard(page, { name: 'Ada Okafor' });
@@ -213,6 +309,23 @@ test.describe('375 px phone', () => {
     expect(box!.x).toBeGreaterThanOrEqual(0);
     expect(box!.x + box!.width).toBeLessThanOrEqual(375);
     expect(box!.height).toBeGreaterThanOrEqual(44);
+
+    // The profile link is a round initial here, beside the chips, and also a full touch target.
+    const profile = topbar(page).getByRole('link', { name: 'Your profile' });
+    await expect(profile).toBeVisible();
+    await expect(profile.locator('.topbar-initial')).toHaveText('A');
+    await expect(profile.locator('.topbar-name')).toBeHidden();
+    const circle = await profile.boundingBox();
+    expect(circle).not.toBeNull();
+    expect(circle!.x).toBeGreaterThanOrEqual(0);
+    expect(circle!.x + circle!.width).toBeLessThanOrEqual(375);
+    expect(circle!.width).toBeGreaterThanOrEqual(44);
+    expect(circle!.height).toBeGreaterThanOrEqual(44);
+    // Row one holds brand, chips and the circle; row two holds the nav and sign-out.
+    expect((await topbar(page).boundingBox())!.height).toBeLessThan(100);
+    await profile.click();
+    await expect(page).toHaveURL('/profile');
+    await expectNoSidewaysScroll(page);
 
     await signOut.click();
     await expect(page).toHaveURL('/signin');

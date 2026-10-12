@@ -5,6 +5,7 @@ import {
   type Session,
   type SupabaseClient,
 } from '@supabase/supabase-js';
+import type { XpReason } from '../lib/xp';
 import type {
   CodeFiles,
   LeaderboardRow,
@@ -44,7 +45,7 @@ interface ProgressRow {
 interface XpEventRow {
   user_id: string;
   item_id: string;
-  reason: string;
+  reason: XpReason;
   amount: number;
   created_at: string;
 }
@@ -355,7 +356,7 @@ export class SupabaseStore implements ProgressStore {
 
   // --- xp ---
 
-  async awardXp(itemId: string, reason: string, amount: number): Promise<boolean> {
+  async awardXp(itemId: string, reason: XpReason, amount: number): Promise<boolean> {
     const user = this.requireUser();
     const { error } = await this.client
       .from('xp_events')
@@ -398,12 +399,11 @@ export class SupabaseStore implements ProgressStore {
   async saveCode(itemId: string, files: CodeFiles): Promise<void> {
     const user = this.requireUser();
     unwrap(
-      await this.client
-        .from('code_saves')
-        .upsert(
-          { user_id: user.id, item_id: itemId, files, updated_at: new Date().toISOString() },
-          { onConflict: 'user_id,item_id' },
-        ),
+      await this.client.from('code_saves').upsert(
+        // updated_at is not sent: the database sets it, and a member cannot.
+        { user_id: user.id, item_id: itemId, files },
+        { onConflict: 'user_id,item_id' },
+      ),
     );
   }
 
@@ -493,7 +493,7 @@ export class SupabaseStore implements ProgressStore {
             run_url: extra?.runUrl ?? null,
             jobs: extra?.jobs ?? null,
             passed: extra?.passed ?? false,
-            checked_at: new Date().toISOString(),
+            // checked_at is not sent: the database sets it, and a member cannot.
           },
           { onConflict: 'user_id,project_id' },
         )

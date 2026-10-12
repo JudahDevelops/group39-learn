@@ -5,6 +5,8 @@
  * mirror the Supabase tables in docs/PLAN.md so both stay in lockstep.
  */
 
+import type { XpReason } from '../lib/xp';
+
 export type Role = 'member' | 'admin';
 
 /** Mirrors the `profiles` table. */
@@ -32,7 +34,7 @@ export interface ProgressEntry {
 export interface XpEvent {
   userId: string;
   itemId: string;
-  reason: string;
+  reason: XpReason;
   amount: number;
   createdAt: string; // ISO timestamp
 }
@@ -130,8 +132,11 @@ export interface ProgressStore {
   listCompleted(userId: string): Promise<ProgressEntry[]>;
 
   // --- xp ---
-  /** Returns false if (itemId, reason) was already awarded for this user. */
-  awardXp(itemId: string, reason: string, amount: number): Promise<boolean>;
+  /**
+   * Returns false if (itemId, reason) was already awarded for this user. `reason` must be one of
+   * XP_REASONS and `amount` a whole number from 1 to 100, or the store throws.
+   */
+  awardXp(itemId: string, reason: XpReason, amount: number): Promise<boolean>;
   listXpEvents(userId: string): Promise<XpEvent[]>;
 
   // --- attempts ---

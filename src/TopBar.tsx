@@ -75,9 +75,18 @@ export function TopBar() {
       {user && (
         <div className="topbar-account">
           {onboarded && (
-            <span className="topbar-name" title={user.displayName}>
-              {user.displayName}
-            </span>
+            <NavLink
+              to="/profile"
+              className={({ isActive }) => `topbar-profile${isActive ? ' active' : ''}`}
+              aria-label="Your profile"
+              title="Your profile"
+            >
+              {/* The name on wide screens, a round initial where there is no room for it. */}
+              <span className="topbar-name">{user.displayName}</span>
+              <span className="topbar-initial" aria-hidden="true">
+                {Array.from(user.displayName.trim())[0]?.toUpperCase()}
+              </span>
+            </NavLink>
           )}
           <button type="button" className="topbar-signout" onClick={handleSignOut}>
             Sign out

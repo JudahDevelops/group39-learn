@@ -49,9 +49,7 @@ Invite links last one hour by default. In the same **Email** provider settings, 
 3. Enter an email address and send. Do this for yourself and for each member.
 4. Each person opens the email, sets a password, then picks a display name, a daily XP goal and (optionally) a GitHub username.
 
-If an invite does not arrive: the free built-in email sender is very limited. It allows only a few emails an hour and may only deliver to addresses on your Supabase team. Either invite two or three people an hour, or set up your own sender under **Project Settings**, **Authentication**, **SMTP Settings** (Resend and Brevo both have free plans). Another way is **Add user**, then **Create new user**, with **Auto Confirm User** ticked and a temporary password you send privately. That person signs in, then opens `/set-password` on the site to choose their own.
-
-If someone forgets their password: **Authentication**, **Users**, the menu on their row, **Send password recovery**.
+If an invite does not arrive, see "If something goes wrong" at the end.
 
 ## 6. Make yourself admin
 
@@ -86,6 +84,19 @@ Check it with `select display_name, role from public.profiles;`. Your row should
 2. Sign in with your own email and password.
 3. Finish onboarding. Your name appears in the top bar.
 4. A wrong password should say "That email and password don't match."
+
+## If something goes wrong
+
+**A member never got the invite email.**
+
+1. Ask them to check spam and junk, and to search for "Supabase".
+2. In **Authentication**, **Users**, open the menu on their row and choose **Resend invitation**. If you do not see it, delete the user and invite them again.
+3. Still nothing? The free built-in email sender is very limited. It allows only a few emails an hour and may only deliver to addresses on your Supabase team. Invite two or three people an hour, or set up your own sender under **Project Settings**, **Authentication**, **SMTP Settings** (Resend and Brevo both have free plans).
+4. Another way is **Add user**, then **Create new user**, with **Auto Confirm User** ticked and a temporary password you send privately. That person signs in, then opens `/set-password` on the site to choose their own.
+
+**A member forgot their password.** In **Authentication**, **Users**, open the menu on their row and choose **Send password recovery**. The link opens the "Set your password" page. The link works once, for 24 hours if you raised the expiry in step 4.
+
+**The project is paused.** Free Supabase projects pause after 7 days with no activity. Members then see "We couldn't reach the server" when they sign in. Open the project in the dashboard and choose **Restore project**. It takes a few minutes and keeps all your data. Do it soon: the dashboard shows how long a paused project can still be restored. Using the site every day prevents the pause.
 
 ## Tests
 

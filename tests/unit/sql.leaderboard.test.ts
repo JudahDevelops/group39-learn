@@ -1,6 +1,6 @@
 import type { PGlite } from '@electric-sql/pglite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { weeklyXp } from '../../src/lib/xp';
+import { XP_BY_REASON, XP_REASONS, weeklyXp, type XpReason } from '../../src/lib/xp';
 import type { XpEvent } from '../../src/store/types';
 import { ADA, BAYO, JUDAH, asAnon, asUser, errorCode, freshDb, seedUsers } from './sql.helpers';
 
@@ -17,13 +17,20 @@ function lagosMonday(now: Date): Date {
 }
 
 let n = 0;
+/** The XP reason that pays exactly `amount` (the database ties each reason to one amount). */
+function reasonFor(amount: number): XpReason {
+  const reason = XP_REASONS.find((r) => XP_BY_REASON[r] === amount);
+  if (!reason) throw new Error(`No XP reason pays ${amount}`);
+  return reason;
+}
+
 async function award(userId: string, at: Date, amount: number): Promise<XpEvent> {
   n += 1;
   await db.query(
     'insert into public.xp_events (user_id, item_id, reason, amount, created_at) values ($1, $2, $3, $4, $5)',
-    [userId, `item-${n}`, 'lesson', amount, at.toISOString()],
+    [userId, `item-${n}`, reasonFor(amount), amount, at.toISOString()],
   );
-  return { userId, itemId: `item-${n}`, reason: 'lesson', amount, createdAt: at.toISOString() };
+  return { userId, itemId: `item-${n}`, reason: reasonFor(amount), amount, createdAt: at.toISOString() };
 }
 
 const ada: XpEvent[] = [];
@@ -43,8 +50,8 @@ beforeAll(async () => {
   ada.push(await award(ADA, monday, 10));
   ada.push(await award(ADA, new Date(monday.getTime() + 3 * DAY + 5 * 3_600_000), 5));
   ada.push(await award(ADA, new Date(monday.getTime() - 40 * DAY), 30));
-  await award(BAYO, new Date(monday.getTime() + 2 * DAY), 20);
-  await award(NEWBIE, monday, 50);
+  await award(BAYO, new Date(monday.getTime() + 2 * DAY), 40);
+  await award(NEWBIE, monday, 80);
 }, 60_000);
 
 afterAll(async () => {
@@ -81,7 +88,7 @@ describe('leaderboard', () => {
     const byName = Object.fromEntries(rows.map((r) => [r.display_name, r]));
     expect(Object.keys(byName).sort()).toEqual(['Ada', 'Bayo', 'Judah']);
     expect(byName.Ada.all_time_xp).toBe(145);
-    expect(byName.Bayo.all_time_xp).toBe(20);
+    expect(byName.Bayo.all_time_xp).toBe(40);
     expect(byName.Judah).toMatchObject({ week_xp: 0, all_time_xp: 0 });
 
     const direct = await asUser(

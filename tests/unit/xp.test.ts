@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { streakDays, todayXp, weeklyXp } from '../../src/lib/xp';
+import {
+  MAX_XP_PER_EVENT,
+  XP,
+  XP_REASONS,
+  isXpReason,
+  streakDays,
+  todayXp,
+  weeklyXp,
+} from '../../src/lib/xp';
 import type { XpEvent } from '../../src/store/types';
 
 function ev(createdAt: string, amount = 10): XpEvent {
@@ -104,5 +112,29 @@ describe('weeklyXp', () => {
       ev('2026-10-11T22:00:00Z', 10), // Sunday 23:00 Lagos, still in week
     ];
     expect(weeklyXp(events, now)).toBe(30);
+  });
+});
+
+describe('XP_REASONS', () => {
+  it('is the list the database accepts, in order', () => {
+    expect([...XP_REASONS]).toEqual([
+      'lesson',
+      'lesson_perfect',
+      'step',
+      'lab',
+      'quiz',
+      'project',
+      'exam',
+    ]);
+  });
+
+  it('recognises each reason and nothing else', () => {
+    for (const reason of XP_REASONS) expect(isXpReason(reason)).toBe(true);
+    expect(isXpReason('workshop_step')).toBe(false);
+    expect(isXpReason('')).toBe(false);
+  });
+
+  it('allows the biggest award in the XP table', () => {
+    expect(Math.max(...Object.values(XP))).toBe(MAX_XP_PER_EVENT);
   });
 });

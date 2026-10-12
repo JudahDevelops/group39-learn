@@ -99,8 +99,21 @@ create table public.xp_events (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   item_id text not null,
-  reason text not null,
-  amount integer not null check (amount > 0),
+  -- The reasons match XP_REASONS in src/lib/xp.ts. Nobody can award themselves a made-up reason
+  -- or an amount above the biggest single award (an exam pass, 100).
+  reason text not null
+    check (reason in ('lesson', 'lesson_perfect', 'step', 'lab', 'quiz', 'project', 'exam')),
+  amount integer not null,
+  -- Each reason pays a fixed amount (src/lib/xp.ts XP), so a member cannot inflate one award.
+  check (
+    (reason = 'lesson' and amount = 10) or
+    (reason = 'lesson_perfect' and amount = 5) or
+    (reason = 'step' and amount = 5) or
+    (reason = 'lab' and amount = 40) or
+    (reason = 'quiz' and amount = 30) or
+    (reason = 'project' and amount = 80) or
+    (reason = 'exam' and amount = 100)
+  ),
   created_at timestamptz not null default now(),
   unique (user_id, item_id, reason)
 );
@@ -169,6 +182,41 @@ create table public.project_submissions (
   checked_at timestamptz not null default now(),
   primary key (user_id, project_id)
 );
+
+-- Server-set timestamps ----------------------------------------------------
+-- Members cannot choose any timestamp. On insert the column default (now()) fills it, because the
+-- insert grants below leave the timestamp columns out. On update these triggers overwrite it, so
+-- even a widened grant could not back-date or forward-date a save or a project check.
+
+create function public.set_updated_at()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+create function public.set_checked_at()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  new.checked_at := now();
+  return new;
+end;
+$$;
+
+create trigger code_saves_set_updated_at
+  before update on public.code_saves
+  for each row execute function public.set_updated_at();
+
+create trigger project_submissions_set_checked_at
+  before update on public.project_submissions
+  for each row execute function public.set_checked_at();
 
 -- Row-level security -------------------------------------------------------
 -- (select auth.uid()) and (select public.is_admin()) are evaluated once per statement, not per row.
@@ -336,18 +384,35 @@ grant select on public.profiles to authenticated;
 -- No update on role: promoting someone happens in the SQL editor.
 grant update (display_name, github_username, daily_goal_xp) on public.profiles to authenticated;
 
-grant select, insert on public.progress to authenticated;
-grant select, insert on public.xp_events to authenticated;
-grant select, insert on public.attempts to authenticated;
-grant select, insert, update on public.code_saves to authenticated;
-grant select, insert on public.quiz_attempts to authenticated;
-grant select, insert on public.lesson_feedback to authenticated;
-grant select, insert, update on public.project_submissions to authenticated;
+-- Inserts are granted column by column. The timestamp columns (completed_at, created_at,
+-- updated_at, checked_at) and the generated ids are left out on purpose, so the server's default
+-- sets them and a member cannot back-date or forward-date a row. A column missing from a grant
+-- fails with "permission denied", never a silent default.
+grant select on public.progress, public.xp_events, public.attempts, public.code_saves,
+  public.quiz_attempts, public.lesson_feedback, public.project_submissions to authenticated;
+
+grant insert (user_id, item_id, block_id) on public.progress to authenticated;
+grant insert (user_id, item_id, reason, amount) on public.xp_events to authenticated;
+grant insert (user_id, item_id, passed, failed_test_index) on public.attempts to authenticated;
+grant insert (user_id, quiz_id, score, total, passed, wrong_ids) on public.quiz_attempts to authenticated;
+grant insert (user_id, block_id, rating, comment) on public.lesson_feedback to authenticated;
+
+-- An upsert (insert ... on conflict do update) rewrites every column it sends, the two key
+-- columns included, so those need update grants too. Row-level security still pins user_id to
+-- the caller. updated_at and checked_at are not granted; the triggers above set them.
+grant insert (user_id, item_id, files) on public.code_saves to authenticated;
+grant update (user_id, item_id, files) on public.code_saves to authenticated;
+grant insert (user_id, project_id, repo_url, run_url, jobs, passed)
+  on public.project_submissions to authenticated;
+grant update (user_id, project_id, repo_url, run_url, jobs, passed)
+  on public.project_submissions to authenticated;
 grant select on public.leaderboard to authenticated;
 
 revoke execute on function public.is_admin() from public, anon;
 revoke execute on function public.handle_new_user() from public, anon, authenticated;
 revoke execute on function public.guard_profile_role() from public, anon, authenticated;
+revoke execute on function public.set_updated_at() from public, anon, authenticated;
+revoke execute on function public.set_checked_at() from public, anon, authenticated;
 revoke execute on function public.streak(uuid, timestamptz) from public, anon;
 grant execute on function public.is_admin() to authenticated;
 grant execute on function public.streak(uuid, timestamptz) to authenticated;

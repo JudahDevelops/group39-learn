@@ -11,6 +11,41 @@ export const XP = {
   examPass: 100,
 } as const;
 
+/**
+ * Why an XP event was written. These are the only values the database accepts for
+ * xp_events.reason (supabase/migrations/0001_init.sql), and LocalStore enforces the same list.
+ * An item can earn each reason once. Perfect lessons earn `lesson` and then `lesson_perfect`.
+ */
+export const XP_REASONS = [
+  'lesson',
+  'lesson_perfect',
+  'step',
+  'lab',
+  'quiz',
+  'project',
+  'exam',
+] as const;
+
+export type XpReason = (typeof XP_REASONS)[number];
+
+/** The fixed amount each reason pays. The database checks the same pairs (supabase/migrations/0001_init.sql). */
+export const XP_BY_REASON: Record<XpReason, number> = {
+  lesson: XP.lesson,
+  lesson_perfect: XP.lessonPerfectBonus,
+  step: XP.workshopStep,
+  lab: XP.lab,
+  quiz: XP.quizPass,
+  project: XP.project,
+  exam: XP.examPass,
+};
+
+/** The most XP one event can carry (an exam pass). The database refuses anything above it. */
+export const MAX_XP_PER_EVENT = 100;
+
+export function isXpReason(value: string): value is XpReason {
+  return (XP_REASONS as readonly string[]).includes(value);
+}
+
 /** Africa/Lagos is UTC+1 year-round (no DST). */
 const LAGOS_OFFSET_MINUTES = 60;
 

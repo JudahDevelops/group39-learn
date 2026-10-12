@@ -64,3 +64,29 @@ describe('LocalStore.getLeaderboard', () => {
     expect(rows[0].allTimeXp).toBe(110);
   });
 });
+
+describe('LocalStore.awardXp', () => {
+  it('awards once per item and reason, like the database constraint', async () => {
+    const store = new LocalStore();
+    await store.signIn('ada@example.com', 'pw');
+    expect(await store.awardXp('lesson-1', 'lesson', 10)).toBe(true);
+    expect(await store.awardXp('lesson-1', 'lesson', 10)).toBe(false);
+    expect(await store.awardXp('lesson-1', 'lesson_perfect', 5)).toBe(true);
+  });
+
+  it('refuses a reason that is not in XP_REASONS and an amount that does not match its reason', async () => {
+    const store = new LocalStore();
+    await store.signIn('ada@example.com', 'pw');
+    // @ts-expect-error not a real reason: the type refuses it, and so does the store at run time
+    await expect(store.awardXp('lesson-1', 'workshop_step', 5)).rejects.toThrow(
+      'Unknown XP reason',
+    );
+    for (const amount of [0, -5, 5, 100, 101, 2.5]) {
+      await expect(store.awardXp('lesson-2', 'lesson', amount), String(amount)).rejects.toThrow(
+        'A "lesson" award is 10 XP',
+      );
+    }
+    expect(await store.awardXp('exam-1', 'exam', 100)).toBe(true);
+    expect(await store.listXpEvents('local-dev-user')).toHaveLength(1);
+  });
+});

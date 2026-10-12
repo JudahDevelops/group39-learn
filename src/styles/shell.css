@@ -472,12 +472,48 @@
   margin-left: auto;
 }
 
+.topbar-profile {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-control);
+  color: var(--paper);
+  text-decoration: none;
+  opacity: 0.8;
+}
+
+.topbar-profile:hover,
+.topbar-profile.active {
+  opacity: 1;
+}
+
 .topbar-name {
   max-width: 12ch;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  opacity: 0.8;
+}
+
+/* The name clips its overflow (for the ellipsis), so the underline sits close enough to stay inside. */
+.topbar-profile.active .topbar-name {
+  text-decoration: underline 2px var(--key);
+  text-underline-offset: 3px;
+}
+
+.topbar-initial {
+  display: none;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(250, 251, 248, 0.55);
+  border-radius: 50%;
+  font-weight: 600;
+}
+
+.topbar-profile.active .topbar-initial {
+  border: 2px solid var(--key);
 }
 
 .topbar-signout {
@@ -522,12 +558,33 @@
     height: var(--touch);
   }
 
+  /* The account group dissolves so its two buttons can sit in different rows: the profile
+     circle beside the chips in row one, sign-out at the end of the nav row. */
   .topbar-account {
+    display: contents;
+  }
+
+  .topbar-signout {
     order: 4;
+    margin-left: auto;
+  }
+
+  /* A full 44 px tap target whose invisible edge overlaps the gaps around it, so the 36 px circle
+     does not make row one taller than the 32 px chips or wider than a 360 px phone allows. */
+  .topbar-profile {
+    width: var(--touch);
+    height: var(--touch);
+    margin: calc((var(--touch) - 32px) / -2) calc((var(--touch) - 36px) / -2);
+    padding: 0;
+    justify-content: center;
   }
 
   .topbar-name {
     display: none;
+  }
+
+  .topbar-initial {
+    display: inline-flex;
   }
 }
 
@@ -545,6 +602,18 @@
   .topbar-nav a,
   .topbar-signout {
     padding: 0 var(--space-2);
+  }
+}
+
+/* Between 480 and 529 px the full chip text plus the profile circle no longer fits beside the brand,
+   so the short chips ("4 days", "35/60 XP") carry on a little past the 480 px switch. */
+@media (min-width: 480px) and (max-width: 529px) {
+  .chip-full {
+    display: none;
+  }
+
+  .chip-short {
+    display: inline-flex;
   }
 }
 
@@ -643,4 +712,13 @@
   color: var(--ink-2);
   font-size: var(--text-meta);
   line-height: var(--lh-meta);
+}
+
+/* After saving the profile: the same pass band as a passing step (docs/design.md). */
+.form-saved {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-left: 3px solid var(--door);
+  border-radius: var(--radius-door);
+  background: var(--door-wash);
 }

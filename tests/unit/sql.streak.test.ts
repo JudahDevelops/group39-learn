@@ -27,12 +27,12 @@ async function earn(uid: string, ...instants: string[]): Promise<XpEvent[]> {
     n += 1;
     await db.query(
       'insert into public.xp_events (user_id, item_id, reason, amount, created_at) values ($1, $2, $3, 5, $4)',
-      [uid, `item-${n}`, 'workshop_step', at],
+      [uid, `item-${n}`, 'step', at],
     );
     events.push({
       userId: uid,
       itemId: `item-${n}`,
-      reason: 'workshop_step',
+      reason: 'step',
       amount: 5,
       createdAt: at,
     });

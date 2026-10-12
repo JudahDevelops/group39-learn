@@ -1,4 +1,10 @@
-import { DEFAULT_DAILY_GOAL_XP, weeklyXp } from '../lib/xp';
+import {
+  DEFAULT_DAILY_GOAL_XP,
+  XP_BY_REASON,
+  isXpReason,
+  weeklyXp,
+  type XpReason,
+} from '../lib/xp';
 import type {
   Attempt,
   CodeFiles,
@@ -202,8 +208,13 @@ export class LocalStore implements ProgressStore {
     return list.filter((p) => p.userId === userId);
   }
 
-  async awardXp(itemId: string, reason: string, amount: number): Promise<boolean> {
+  async awardXp(itemId: string, reason: XpReason, amount: number): Promise<boolean> {
     const user = this.requireUser();
+    // The same two rules the database enforces, so a mistake shows up in dev mode too.
+    if (!isXpReason(reason)) throw new Error(`Unknown XP reason "${reason}".`);
+    if (amount !== XP_BY_REASON[reason]) {
+      throw new Error(`A "${reason}" award is ${XP_BY_REASON[reason]} XP, not ${amount}.`);
+    }
     const list = this.mirror.get<XpEvent[]>(KEYS.xpEvents, []);
     const already = list.some(
       (e) => e.userId === user.id && e.itemId === itemId && e.reason === reason,
