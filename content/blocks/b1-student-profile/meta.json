@@ -4,7 +4,7 @@
   "type": "workshop",
   "title": "Build a Student Profile Page",
   "runner": "web",
-  "estMinutes": 15,
+  "estMinutes": 40,
   "sourceRef": "course-content.md:1544-1626,1017",
-  "demo": "index.html"
+  "demo": "profile.html"
 }

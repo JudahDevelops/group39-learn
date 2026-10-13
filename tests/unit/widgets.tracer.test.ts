@@ -19,6 +19,7 @@ const F2 = {
       text: 'Amina, in room B-214, types "water dripping from the ceiling onto the socket" into the Student Portal and presses Submit.',
       tier: 'Client',
     },
+    { text: 'The portal sends the complaint to the server.', tier: 'Client' },
     {
       text: "Complaint Management checks she's logged in as a student and finds her room from her allocation.",
       tier: 'Logic',
@@ -41,7 +42,7 @@ describe('parseTracerProps', () => {
     const { title, tiers, steps } = parseTracerProps(F2);
     expect(title).toBe('F2 Complaint triage');
     expect(tiers).toHaveLength(4);
-    expect(steps.map((s) => s.tier)).toEqual([0, 1, 1, 2, 3, 0]);
+    expect(steps.map((s) => s.tier)).toEqual([0, 0, 1, 1, 2, 3, 0]);
   });
 
   it.each([
@@ -101,7 +102,7 @@ describe('pickTier', () => {
     let state: TracerState = startTracer();
     state = pickTier(state, steps, 3).state; // wrong on step 1
     state = pickTier(state, steps, 0).state; // right
-    state = pickTier(state, steps, 1).state; // step 2 right first time
+    state = pickTier(state, steps, 0).state; // step 2 (the portal sends it) right first time
     expect(state.current).toBe(2);
     expect(state.wrongPicks).toBe(1);
     expect(state.missedSteps).toBe(1);

@@ -9,6 +9,9 @@
           "title": "HTML",
           "blocks": [
             "b1-first-web-page",
+            "b1-lists-and-tables",
+            "b1-forms",
+            "b1-page-structure",
             "b1-student-profile",
             "b1-recipe-page",
             "b1-html-review",

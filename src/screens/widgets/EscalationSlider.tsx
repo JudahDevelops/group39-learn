@@ -141,6 +141,5 @@ export function EscalationSlider({ props, onResult }: WidgetProps) {
   );
 }
 
-// No `scored` flag, on purpose: the player reads that flag by widget name alone, and this widget is an
-// explorer unless a lesson gives it a `target`. The scored mode still reports through onResult, but the
-// player's Continue stays available, as it does for any unscored widget.
+/** Scored only in the lesson's scored mode, which is when it is given a `target`. */
+EscalationSlider.scored = (props: Record<string, unknown>) => props.target !== undefined;

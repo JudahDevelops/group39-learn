@@ -5,7 +5,7 @@ import type { GetRunner } from '../../runners/types';
 import { pickOption } from '../../screens/answers';
 import { ScreenView } from '../../screens/ScreenView';
 import type { Answer } from '../../screens/types';
-import { getWidget } from '../../screens/widgets';
+import { isScored } from '../../screens/widgets';
 import { useStore } from '../../store/StoreContext';
 import type { LessonFeedbackRating } from '../../store/types';
 import '../../styles/lesson.css';
@@ -231,8 +231,10 @@ export function LessonPlayer({ block, onExit, getRunner = defaultGetRunner }: Le
           disabled: !(answer.kind === 'checklist' && checklistDone(screen, answer)),
         };
       case 'widget': {
-        const scored = getWidget(screen.name)?.scored === true;
-        return { kind: 'continue', disabled: scored && !widgetDone };
+        // A scored widget has its own Check and reports a result: the feedback sheet then takes the bar's
+        // place. Until then no Continue competes with it.
+        if (isScored(screen.name, screen.props) && !widgetDone) return { kind: 'none' };
+        return { kind: 'continue', disabled: false };
       }
       case 'typein':
         // Without a runner nothing can be checked, so the learner may carry on.
@@ -266,6 +268,7 @@ export function LessonPlayer({ block, onExit, getRunner = defaultGetRunner }: Le
       case 'reveal':
         return reveal;
       case 'rate':
+      case 'none':
         return null;
     }
   }

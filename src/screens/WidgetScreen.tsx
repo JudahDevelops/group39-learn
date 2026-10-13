@@ -1,7 +1,7 @@
 import { Component, type ReactNode } from 'react';
 import { Html } from './Html';
 import { Question } from './Question';
-import { getWidget } from './widgets';
+import { getWidget, isScored } from './widgets';
 import type { ScreenOf } from './types';
 
 export const WIDGET_MISSING_TEXT = 'This interactive part is not available yet.';
@@ -51,7 +51,9 @@ export function WidgetScreen({
       <WidgetBoundary key={attempt} onFail={() => onResult()}>
         <Widget props={screen.props} onResult={onResult} />
       </WidgetBoundary>
-      {!Widget.scored && screen.why && <Html html={screen.why} className="reading" />}
+      {!isScored(screen.name, screen.props) && screen.why && (
+        <Html html={screen.why} className="reading" />
+      )}
     </div>
   );
 }

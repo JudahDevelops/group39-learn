@@ -5,7 +5,9 @@ export type BarMode =
   | { kind: 'check'; label: string; disabled: boolean }
   | { kind: 'continue'; disabled: boolean }
   | { kind: 'reveal' }
-  | { kind: 'rate' };
+  | { kind: 'rate' }
+  /** Nothing to press: a widget with its own Check holds the bar back until it reports a result. */
+  | { kind: 'none' };
 
 export function ActionBar({
   mode,
@@ -25,6 +27,8 @@ export function ActionBar({
   useEffect(() => {
     if (rating) gotIt.current?.focus({ preventScroll: true });
   }, [rating]);
+
+  if (mode.kind === 'none') return null;
 
   return (
     <div className="lesson-bar">

@@ -552,3 +552,9 @@
   color: var(--ink-2);
   font-weight: 600;
 }
+
+/* Request and response bodies wrap instead of scrolling, so no part of a long line is ever hidden. */
+.lesson .w-exchange .code-block pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

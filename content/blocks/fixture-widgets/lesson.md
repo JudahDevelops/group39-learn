@@ -84,6 +84,10 @@ Follow flow F2. For each step, tap the tier that handles it.
       "tier": "Client"
     },
     {
+      "text": "The portal sends the complaint to the server.",
+      "tier": "Client"
+    },
+    {
       "text": "Complaint Management checks she's logged in as a student and finds her room from her allocation.",
       "tier": "Logic"
     },
@@ -134,6 +138,10 @@ The level L is 0 before the deadline d, 1 from d until 2d, and 2 from 2d on.
 ```json
 { "deadlineHours": 72, "maxHours": 216, "target": 1 }
 ```
+
+## --why--
+
+The hall warden is emailed as soon as t reaches the deadline d. For a normal complaint that is 72 hours.
 
 # --screen-- order
 

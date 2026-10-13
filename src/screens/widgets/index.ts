@@ -11,13 +11,12 @@
  *   `onResult` callback.
  * - A widget that only lets the learner explore never needs to call `onResult`: Continue is there from
  *   the start.
- * - A widget that scores an answer sets `Widget.scored = true`. The player then hides Continue until the
- *   widget calls `onResult(true)` (the player shows "Correct", with the screen's "Why?") or
- *   `onResult(false, note)` (the player shows "Not quite" with `note`, then remounts the widget on
- *   "Try again"). The first result counts for accuracy, so a widget calls it once per attempt.
- *   The flag belongs to the component, not to a lesson's props, so a widget that is scored only in some
- *   lessons (escalation-slider with a `target`) leaves it unset: it still reports through `onResult`,
- *   and the sheet appears, but Continue is not held back.
+ * - A widget that scores an answer sets `Widget.scored`: `true`, or a function of the props for a widget
+ *   that is scored only in some lessons (escalation-slider with a `target`). Read it with `isScored`. The
+ *   player then hides Continue until the widget calls `onResult(true)` (the player shows "Correct", with
+ *   the screen's "Why?") or `onResult(false, note)` (the player shows "Not quite" with `note`, then
+ *   remounts the widget on "Try again"). The screen's `why` shows only after a result. The first result
+ *   counts for accuracy, so a widget calls it once per attempt.
  * - `onResult()` with no argument means "finished, nothing to score": it enables Continue.
  */
 import type { ComponentType } from 'react';
@@ -37,8 +36,11 @@ export interface WidgetProps {
 }
 
 export type WidgetComponent = ComponentType<WidgetProps> & {
-  /** True when the widget reports a result that the lesson grades. */
-  scored?: boolean;
+  /**
+   * True when the widget reports a result that the lesson grades. A function decides from the lesson's
+   * props, and must not throw for props it cannot read (the widget itself reports those).
+   */
+  scored?: boolean | ((props: Record<string, unknown>) => boolean);
 };
 
 /** Widget name (kebab-case, as written in lesson.md) → component. */
@@ -51,4 +53,10 @@ export const widgets: Record<string, WidgetComponent> = {
 
 export function getWidget(name: string): WidgetComponent | undefined {
   return Object.prototype.hasOwnProperty.call(widgets, name) ? widgets[name] : undefined;
+}
+
+/** Whether the widget `name`, given these props, reports a graded result. False for an unknown name. */
+export function isScored(name: string, props: Record<string, unknown>): boolean {
+  const scored = getWidget(name)?.scored;
+  return typeof scored === 'function' ? scored(props) : scored === true;
 }

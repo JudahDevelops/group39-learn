@@ -30,7 +30,7 @@ const SORTER_CARDS: [card: string, tier: string][] = [
 ];
 
 /** The tier that handles each step of F2, in order. */
-const F2_TIERS = ['Client', 'Logic', 'Logic', 'Data', 'Output', 'Client'];
+const F2_TIERS = ['Client', 'Client', 'Logic', 'Logic', 'Data', 'Output', 'Client'];
 
 const FIFTEEN_STEPS = [
   'Understand the topic',
@@ -108,6 +108,16 @@ async function expectTouchTargets(page: Page) {
   expect(small).toEqual([]);
 }
 
+/** No code listing of the request and response walk-through has a line cut off at the right. */
+async function expectNoClippedCode(page: Page) {
+  const clipped = await page.evaluate(() =>
+    Array.from(document.querySelectorAll('.w-exchange pre'))
+      .filter((pre) => pre.scrollWidth > pre.clientWidth)
+      .map((pre) => pre.getAttribute('aria-label')),
+  );
+  expect(clipped).toEqual([]);
+}
+
 /** What the 375 px run checks on every screen; the laptop run checks nothing extra. */
 type Layout = () => Promise<void>;
 
@@ -129,6 +139,7 @@ async function playExchange(page: Page, layout: Layout) {
   ).toBe('rgb(20, 32, 27)');
   await expect(page.getByLabel('Response', { exact: true })).toHaveCount(0);
   await expect(button(page, 'Back')).toBeDisabled();
+  await expectNoClippedCode(page);
   await layout();
 
   await button(page, 'Next').click();
@@ -145,6 +156,7 @@ async function playExchange(page: Page, layout: Layout) {
   await expect(response).toContainText('201 Created');
   await expect(response).toContainText('"category": "plumbing"');
   await expect(page.locator('.w-dot-up')).toHaveCount(1); // database back to server
+  await expectNoClippedCode(page);
   await layout();
 
   await button(page, 'Next').click();
@@ -167,6 +179,8 @@ async function placeCards(page: Page, placements: [card: string, tier: string][]
 async function playSorter(page: Page, layout: Layout) {
   await expect(page.getByRole('heading', { name: 'Cards to place' })).toBeVisible();
   await expect(button(page, 'Check')).toBeDisabled();
+  // A scored widget has its own Check, so the bottom bar shows no Continue next to it.
+  await expect(button(page, 'Continue')).toHaveCount(0);
   await expect(page.getByText('0 of 8 placed')).toBeVisible();
   await layout();
 
@@ -199,13 +213,14 @@ async function playSorter(page: Page, layout: Layout) {
 
 async function playTracer(page: Page, layout: Layout) {
   await expect(page.getByText('F2 Complaint triage')).toBeVisible();
-  await expect(page.getByText('Step 1 of 6')).toBeVisible();
+  await expect(page.getByText('Step 1 of 7')).toBeVisible();
+  await expect(button(page, 'Continue')).toHaveCount(0);
   await layout();
 
   // First try: one wrong tier on the first step.
   await tierButton(page, 'Data').click();
   await expect(page.getByText('Data is not right for this step. Pick another tier.')).toBeVisible();
-  await expect(page.getByText('Step 1 of 6')).toBeVisible();
+  await expect(page.getByText('Step 1 of 7')).toBeVisible();
   await expect(tierButton(page, 'Data')).toHaveAttribute('aria-disabled', 'true');
   await layout();
   for (const tier of F2_TIERS) await tierButton(page, tier).click();
@@ -215,12 +230,13 @@ async function playTracer(page: Page, layout: Layout) {
   await layout();
   await button(page, 'Check').click();
   await expect(sheetTitle(page, 'Not quite')).toBeVisible();
-  await expect(page.getByText('You picked a wrong tier once, on 1 of 6 steps.')).toBeVisible();
+  await expect(page.getByText('You picked a wrong tier once, on 1 of 7 steps.')).toBeVisible();
+  await expect(button(page, 'Continue')).toHaveCount(0);
   await button(page, 'Try again').click();
 
   // Second try: no slips. The arrows light up for the gaps each move crosses.
-  await expect(page.getByText('Step 1 of 6')).toBeVisible();
-  const lit = [0, 1, 0, 1, 1, 3]; // Client, Logic, Logic, Data, Output, Client (up three gaps)
+  await expect(page.getByText('Step 1 of 7')).toBeVisible();
+  const lit = [0, 0, 1, 0, 1, 1, 3]; // Client, Client, Logic, Logic, Data, Output, Client (up three gaps)
   for (const [i, tier] of F2_TIERS.entries()) {
     await tierButton(page, tier).click();
     await expect(litArrows(page)).toHaveCount(lit[i]);
@@ -254,11 +270,16 @@ async function playExplorer(page: Page, layout: Layout) {
   await cont(page);
 }
 
+const SCORED_WHY = 'The hall warden is emailed as soon as t reaches the deadline d.';
+
 async function playScoredSlider(page: Page, layout: Layout) {
   const slider = page.getByRole('slider', { name: 'Time the complaint has been open, in hours' });
   await expect(
     page.getByText('Move the slider to the first moment the hall warden is emailed.'),
   ).toBeVisible();
+  // Given a target the slider is scored: no Continue beside its Check, and the why waits for the result.
+  await expect(button(page, 'Continue')).toHaveCount(0);
+  await expect(page.getByText(SCORED_WHY)).toHaveCount(0);
   await layout();
 
   // One hour early.
@@ -279,6 +300,7 @@ async function playScoredSlider(page: Page, layout: Layout) {
   await button(page, 'Check').click();
   await expect(sheetTitle(page, 'Not quite')).toBeVisible();
   await expect(page.getByText('The hall warden was emailed earlier than that.')).toBeVisible();
+  await expect(page.getByText(SCORED_WHY)).toBeHidden();
   await button(page, 'Try again').click();
 
   // Exactly d, reached with the one-hour buttons.
@@ -287,6 +309,8 @@ async function playScoredSlider(page: Page, layout: Layout) {
   await expect(page.getByText('t = 72 hours')).toBeVisible();
   await button(page, 'Check').click();
   await expect(sheetTitle(page, 'Correct')).toBeVisible();
+  await button(page, 'Why?').click();
+  await expect(page.getByText(SCORED_WHY)).toBeVisible();
   await layout();
   await cont(page);
 }
@@ -394,6 +418,40 @@ test('every widget renders, and the scored ones fail and then pass', async ({ pa
   await playLesson(page, course, async () => {});
 });
 
+test('a slider with a target is scored: Not quite, then Correct, and Continue waits for the result', async ({
+  page,
+  course,
+}) => {
+  test.setTimeout(120_000);
+  const none: Layout = async () => {};
+  await openLesson(page, course);
+  await cont(page); // the request and response screen
+  await onScreen(page, course, 2);
+  await playSorter(page, none);
+  await onScreen(page, course, 3);
+  await playTracer(page, none);
+  await onScreen(page, course, 4);
+  // The same widget without a target is an explorer: Continue is there from the start.
+  await expect(button(page, 'Continue')).toBeEnabled();
+  await expect(button(page, 'Check')).toHaveCount(0);
+  await cont(page);
+
+  await onScreen(page, course, 5);
+  const slider = page.getByRole('slider', { name: 'Time the complaint has been open, in hours' });
+  await expect(button(page, 'Continue')).toHaveCount(0);
+  await slider.fill('100');
+  await button(page, 'Check').click();
+  await expect(sheetTitle(page, 'Not quite')).toBeVisible();
+  await expect(button(page, 'Continue')).toHaveCount(0);
+  await button(page, 'Try again').click();
+  await expect(button(page, 'Continue')).toHaveCount(0);
+  await slider.fill('72');
+  await button(page, 'Check').click();
+  await expect(sheetTitle(page, 'Correct')).toBeVisible();
+  await cont(page);
+  await onScreen(page, course, 6);
+});
+
 test('the fixture sits in chapter Z2, after the six block types of Z1', async ({
   page,
   course,
@@ -443,6 +501,23 @@ test('the tier sorter works with the keyboard alone', async ({ page, course }) =
       .locator('.w-bucket', { has: page.getByRole('button', { name: 'Data', exact: true }) })
       .getByRole('button', { name: card, exact: true }),
   ).toBeVisible();
+});
+
+test.describe('1366 px laptop', () => {
+  test.use({ viewport: { width: 1366, height: 768 } });
+
+  test('request and response bodies wrap: no line is cut off', async ({ page, course }) => {
+    await openLesson(page, course);
+    const request = page.getByLabel('Request', { exact: true });
+    await expect(request).toContainText('near the light');
+    await expectNoClippedCode(page);
+    for (let i = 0; i < 3; i += 1) await button(page, 'Next').click();
+    const response = page.getByLabel('Response', { exact: true });
+    await expect(response).toContainText('2026-10-08T10:00:00+01:00');
+    await expectNoClippedCode(page);
+    // Long lines wrap inside the box instead of scrolling it.
+    expect(await request.evaluate((el) => getComputedStyle(el).whiteSpace)).toBe('pre-wrap');
+  });
 });
 
 test.describe('reduced motion', () => {

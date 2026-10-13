@@ -40,8 +40,9 @@ Intelligent Hostel Management System (IHMS) for their group project and must def
 (Added by the reviewer as agents make mistakes. Read before starting.)
 - Chapter titles are short names: `HTML`, `CSS`, `JavaScript`, `Python`. The map adds "Chapter B1:" in front, so a
   title with its own colon reads badly.
-- A workshop or lab link must point to a different page from the one being built (the file in `demo`). A page that
-  links to itself teaches nothing about `href`.
+- A lone link that teaches `href` must point to a different page from the one being built. (A site nav that also
+  lists the current page is normal.) Name each exercise's file after the page it builds: `staff.html`, `login.html`,
+  `profile.html`, not `index.html` for everything.
 - Fictional people in exercises are fine (Amina in room B-214 comes from the source). Facts about the IHMS, the
   paper or the research are not: those still need a source line.
 - Chapter order is lessons → warm-up workshop → warm-up lab → IHMS workshop → IHMS lab → review → quiz. A

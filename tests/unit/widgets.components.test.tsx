@@ -6,7 +6,7 @@ import { DataFlowTracer } from '../../src/screens/widgets/DataFlowTracer';
 import { EscalationSlider } from '../../src/screens/widgets/EscalationSlider';
 import { RequestResponse } from '../../src/screens/widgets/RequestResponse';
 import { TierSorter } from '../../src/screens/widgets/TierSorter';
-import { getWidget, widgets } from '../../src/screens/widgets';
+import { isScored, widgets } from '../../src/screens/widgets';
 
 afterEach(() => cleanup());
 
@@ -57,17 +57,28 @@ const EXCHANGE = {
 const button = (name: string | RegExp) => screen.getByRole('button', { name });
 
 describe('registry', () => {
-  it('registers the four widgets, and only the sorter and tracer hold Continue back', () => {
+  it('registers the four widgets', () => {
     expect(Object.keys(widgets).sort()).toEqual([
       'data-flow-tracer',
       'escalation-slider',
       'request-response',
       'tier-sorter',
     ]);
-    expect(getWidget('tier-sorter')?.scored).toBe(true);
-    expect(getWidget('data-flow-tracer')?.scored).toBe(true);
-    expect(getWidget('request-response')?.scored).toBeFalsy();
-    expect(getWidget('escalation-slider')?.scored).toBeFalsy();
+  });
+
+  it('the sorter and the tracer are scored; the request walk-through is not', () => {
+    expect(isScored('tier-sorter', {})).toBe(true);
+    expect(isScored('data-flow-tracer', {})).toBe(true);
+    expect(isScored('request-response', {})).toBe(false);
+    expect(isScored('no-such-widget', {})).toBe(false);
+  });
+
+  it('the slider is scored only when its props give a target, and props it cannot read do not throw', () => {
+    expect(isScored('escalation-slider', { deadlineHours: 24, maxHours: 72 })).toBe(false);
+    expect(isScored('escalation-slider', { deadlineHours: 72, maxHours: 216, target: 1 })).toBe(
+      true,
+    );
+    expect(isScored('escalation-slider', {})).toBe(false);
   });
 });
 
