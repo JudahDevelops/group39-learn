@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { expect, seedProgress, test } from './course-helpers';
+import { expect, expectDoneLabels, seedProgress, test, type BuiltCourse } from './course-helpers';
 import { signInAndOnboard } from './helpers';
 
 const FIXTURES = [
@@ -14,6 +14,13 @@ const FIXTURES = [
 /** The door for a room code, as a link: its name holds the code, title, size and status. */
 const door = (page: Page, roomCode: string) =>
   page.getByRole('link', { name: new RegExp(roomCode) });
+
+/**
+ * The row of doors that holds a block, found through the block's room code in the built course. Other
+ * chapters (B1, Z2) have rows of their own, so the first row on the page is not necessarily this one.
+ */
+const corridorOf = (page: Page, course: BuiltCourse, slug: string) =>
+  page.locator('.corridor', { has: door(page, course.summary(slug).roomCode) });
 
 async function openMap(page: Page) {
   await signInAndOnboard(page);
@@ -61,10 +68,10 @@ test('fixture doors show room codes Z1-01 to Z1-06, titles and a plain size line
 
 test('counts "n of m done" per chapter and per track', async ({ page, course }) => {
   await openMap(page);
-  await expect(page.getByText('0 of 6 done')).toHaveCount(2); // track and chapter
+  await expectDoneLabels(page, course); // every track and chapter, counted from the built course
   await seedProgress(page, course.doneEntries('fixture-lesson'));
   await page.goto('/learn');
-  await expect(page.getByText('1 of 6 done')).toHaveCount(2);
+  await expectDoneLabels(page, course, ['fixture-lesson']);
 });
 
 test('the first block not done is next up; nothing is locked or greyed', async ({
@@ -136,7 +143,7 @@ test('a workshop is done when every step is, and then its door shows a key tag',
   await expect(link).toHaveAccessibleName(/Done/);
   await expect(link.locator('.door-tag')).toBeVisible();
   await expect(link.locator('.door-tag')).toHaveText('✓');
-  await expect(page.getByText('1 of 6 done')).toHaveCount(2);
+  await expectDoneLabels(page, course, ['fixture-workshop']);
   // A finished workshop reopens from its first step.
   await expect(link).toHaveAttribute(
     'href',
@@ -158,7 +165,7 @@ test('marking the review as read makes its door done, and the key tag drops once
   const link = door(page, 'Z1-05');
   await expect(link).toHaveAccessibleName(/Done/);
   await expect(link.locator('.door-tag')).toBeVisible();
-  await expect(page.getByText('1 of 6 done')).toHaveCount(2);
+  await expectDoneLabels(page, course, ['fixture-review']);
   // It became done since the last visit, so it celebrates...
   await expect(link.locator('.door-tag-drop')).toHaveCount(1);
   expect(
@@ -190,12 +197,12 @@ test.describe('reduced motion', () => {
 test.describe('laptop', () => {
   test.use({ viewport: { width: 700, height: 900 } });
 
-  test('rows wrap instead of scrolling', async ({ page }) => {
+  test('rows wrap instead of scrolling', async ({ page, course }) => {
     await openMap(page);
     const first = await door(page, 'Z1-01').boundingBox();
     const last = await door(page, 'Z1-06').boundingBox();
     expect(last!.y).toBeGreaterThan(first!.y + first!.height / 2);
-    const corridor = page.locator('.corridor').first();
+    const corridor = corridorOf(page, course, 'fixture-project');
     expect(await corridor.evaluate((el) => getComputedStyle(el).flexWrap)).toBe('wrap');
     expect(await corridor.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
   });
@@ -209,7 +216,8 @@ test.describe('375 px phone', () => {
     course,
   }) => {
     await openMap(page);
-    const corridor = page.locator('.corridor').first();
+    // Chapter Z1: its last door (Z1-06, the project) sits beyond the right edge of a phone.
+    const corridor = corridorOf(page, course, 'fixture-project');
     const style = await corridor.evaluate((el) => {
       const s = getComputedStyle(el);
       return { snap: s.scrollSnapType, overflowX: s.overflowX, wrap: s.flexWrap };

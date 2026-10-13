@@ -1,0 +1,9 @@
+{
+  "id": "ehbapd0j",
+  "slug": "b1-first-web-page",
+  "type": "lesson",
+  "title": "Your first web page",
+  "runner": "web",
+  "estMinutes": 15,
+  "sourceRef": "course-content.md:1544-1626"
+}

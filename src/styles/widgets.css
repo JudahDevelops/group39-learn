@@ -1,0 +1,554 @@
+/* Lesson widgets: escalation slider, tier sorter, data-flow tracer, request and response.
+   Colours, radii and spacing come from tokens.css; nothing here adds a colour of its own. Colour carries
+   state only: ink for "selected" and "here", door green for right, biro for wrong, brass for the position
+   of a thumb, a dot or a "you are here" chip (always with an ink edge or ink text on it).
+   The two arrows that move (the dot in .w-dot) are an exception to the motion rules in docs/design.md that
+   the widget brief asks for; prefers-reduced-motion removes them and the arrowhead says the same. */
+
+.w-sorter,
+.w-slider,
+.w-tracer,
+.w-exchange {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.w-heading,
+.w-title {
+  margin: 0;
+  font-size: var(--text-ui);
+  line-height: var(--lh-ui);
+  font-weight: 700;
+}
+
+.w-title {
+  font-size: var(--text-question);
+  line-height: var(--lh-question);
+}
+
+.w-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.w-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.w-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.w-actions-split .btn {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.w-count {
+  margin-right: auto;
+}
+
+.w-mark {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* A brass key-tag chip: "Flow is here". Ink text on brass is 8:1. */
+.w-badge {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 var(--space-2);
+  background: var(--key);
+  color: var(--ink);
+  border-radius: var(--radius-control);
+  font-size: var(--text-meta);
+  line-height: var(--lh-meta);
+  font-weight: 600;
+}
+
+.w-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  min-height: var(--lh-ui);
+  margin: 0;
+}
+
+.w-note .icon {
+  margin-top: 2px;
+}
+
+.w-note-right {
+  color: var(--door);
+}
+
+.w-note-wrong {
+  color: var(--biro);
+}
+
+.w-stepbox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.w-stepbox p {
+  margin: 0;
+}
+
+.w-step {
+  font-size: var(--text-question);
+  line-height: var(--lh-question);
+  font-weight: 700;
+}
+
+.w-placeholder {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px dashed var(--ink-2);
+  border-radius: var(--radius-door);
+  color: var(--ink-2);
+}
+
+/* Tier sorter -------------------------------------------------------------------------------------- */
+
+.w-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: var(--touch);
+  padding: var(--space-2) var(--space-4);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-control);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.w-card-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.w-card:hover:not(:disabled, .w-card-selected) {
+  border-color: var(--ink-2);
+}
+
+.w-card:disabled {
+  cursor: default;
+}
+
+/* A 2 px border without moving the text, as on option rows. */
+.w-card-selected {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.w-card-right {
+  border-color: var(--door);
+  box-shadow: inset 0 0 0 1px var(--door);
+}
+
+.w-card-wrong {
+  border-color: var(--biro);
+  box-shadow: inset 0 0 0 1px var(--biro);
+}
+
+.w-card-right .w-mark {
+  color: var(--door);
+}
+
+.w-card-wrong .w-mark {
+  color: var(--biro);
+}
+
+.w-tiers {
+  gap: var(--space-3);
+}
+
+.w-bucket {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-door);
+}
+
+.w-bucket-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: var(--touch);
+  padding: var(--space-2) var(--space-3);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: default;
+}
+
+.w-bucket-head:not(:disabled) {
+  border: 1px dashed var(--ink-2);
+  background: var(--paper);
+  cursor: pointer;
+}
+
+.w-bucket-head:not(:disabled):hover {
+  border-color: var(--ink);
+}
+
+.w-hint {
+  color: var(--ink-2);
+  font-size: var(--text-meta);
+  line-height: var(--lh-meta);
+}
+
+/* Escalation slider -------------------------------------------------------------------------------- */
+
+.w-slider p {
+  margin: 0;
+}
+
+.w-lead {
+  font-weight: 600;
+}
+
+.w-task {
+  font-size: var(--text-reading);
+  line-height: var(--lh-reading);
+  font-weight: 700;
+}
+
+.w-readout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-door);
+}
+
+.w-readout > div {
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.w-readout dt {
+  color: var(--ink-2);
+}
+
+.w-readout dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Room for the longest sentence (three lines at 375 px), so the slider below does not jump. */
+.w-levelnote {
+  min-height: calc(var(--lh-ui) * 3);
+}
+
+/* The bar is inset by half the thumb (12 px) on each side, so the thumb of the range input below it sits
+   exactly under the same hour on the bar. */
+.w-timeline {
+  position: relative;
+  display: flex;
+  height: 40px;
+  margin: 0 12px;
+  box-shadow: 0 0 0 1px var(--ink-2);
+}
+
+.w-seg {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  background: var(--paper);
+  font-variant-numeric: tabular-nums;
+}
+
+.w-seg + .w-seg {
+  border-left: 1px solid var(--ink-2);
+}
+
+.w-seg-on {
+  font-weight: 700;
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+
+/* Two nubs above and below the bar rather than a line through it, so the L labels stay readable. */
+.w-now {
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  width: 3px;
+  margin-left: -1px;
+  pointer-events: none;
+}
+
+.w-now::before,
+.w-now::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: var(--ink);
+}
+
+.w-now::before {
+  top: 0;
+}
+
+.w-now::after {
+  bottom: 0;
+}
+
+.w-range {
+  display: block;
+  width: 100%;
+  height: var(--touch);
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.w-range:disabled {
+  cursor: default;
+}
+
+.w-range::-webkit-slider-runnable-track {
+  height: 4px;
+  background: var(--ink-2);
+  border-radius: 2px;
+}
+
+.w-range::-moz-range-track {
+  height: 4px;
+  background: var(--ink-2);
+  border-radius: 2px;
+}
+
+.w-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  margin-top: -10px;
+  background: var(--key);
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+}
+
+.w-range::-moz-range-thumb {
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  background: var(--key);
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+}
+
+.w-axis {
+  position: relative;
+  height: var(--lh-meta);
+  margin: 0 12px;
+  color: var(--ink-2);
+  font-size: var(--text-meta);
+  line-height: var(--lh-meta);
+  font-variant-numeric: tabular-nums;
+}
+
+.w-axis span {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.w-axis .w-axis-end {
+  transform: translateX(-100%);
+}
+
+/* Tiers and the arrows between them ---------------------------------------------------------------- */
+
+.w-flow {
+  display: flex;
+  flex-direction: column;
+  max-width: 24rem;
+}
+
+.w-tier {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: 56px;
+  padding: var(--space-2) var(--space-4);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-door);
+  color: var(--ink);
+}
+
+.w-tier-name {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.w-tier-button {
+  width: 100%;
+  border-radius: var(--radius-control);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.w-tier-button:hover:not(:disabled, .w-tier-here, .w-tier-wrong) {
+  border-color: var(--ink-2);
+}
+
+.w-tier-button:disabled,
+.w-tier-wrong {
+  cursor: default;
+}
+
+.w-tier-here {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.w-tier-wrong {
+  border-color: var(--biro);
+  box-shadow: inset 0 0 0 1px var(--biro);
+}
+
+.w-tier-wrong .w-mark {
+  color: var(--biro);
+}
+
+.w-link {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  height: 28px;
+}
+
+.w-link svg {
+  stroke: var(--ink-2);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.w-link-lit svg {
+  stroke: var(--ink);
+  stroke-width: 3;
+}
+
+.w-dot {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  box-sizing: border-box;
+  background: var(--key);
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  opacity: 0;
+  animation-duration: 420ms;
+  animation-timing-function: ease-in-out;
+  animation-fill-mode: both;
+}
+
+.w-dot-down {
+  animation-name: w-run-down;
+}
+
+.w-dot-up {
+  animation-name: w-run-up;
+}
+
+@keyframes w-run-down {
+  from {
+    opacity: 0;
+    transform: translateY(0);
+  }
+  20%,
+  80% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+
+@keyframes w-run-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  20%,
+  80% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .w-dot {
+    display: none;
+  }
+}
+
+/* Tracer: the steps already placed ------------------------------------------------------------------- */
+
+.w-trace {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding-left: var(--space-5);
+}
+
+.w-trace-tier {
+  color: var(--ink-2);
+  font-weight: 600;
+}

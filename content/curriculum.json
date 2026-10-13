@@ -1,6 +1,23 @@
 {
   "tracks": [
     {
+      "id": "B",
+      "title": "Build the IHMS",
+      "chapters": [
+        {
+          "id": "B1",
+          "title": "HTML",
+          "blocks": [
+            "b1-first-web-page",
+            "b1-student-profile",
+            "b1-recipe-page",
+            "b1-html-review",
+            "b1-html-quiz"
+          ]
+        }
+      ]
+    },
+    {
       "id": "Z",
       "title": "Fixtures",
       "fixture": true,
@@ -15,6 +32,13 @@
             "fixture-quiz",
             "fixture-review",
             "fixture-project"
+          ]
+        },
+        {
+          "id": "Z2",
+          "title": "Interactive widgets",
+          "blocks": [
+            "fixture-widgets"
           ]
         }
       ]

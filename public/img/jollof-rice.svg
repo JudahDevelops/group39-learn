@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 180" width="240" height="180" role="img" aria-label="A bowl of jollof rice with plantain slices and a green garnish">
+  <rect width="240" height="180" rx="8" fill="#EDEFEA"/>
+  <ellipse cx="120" cy="150" rx="86" ry="10" fill="#CBD2CC"/>
+  <path d="M34 92h172c0 46-34 64-86 64S34 138 34 92z" fill="#1E4A38"/>
+  <path d="M34 92h172c0 6-1 11-3 16H37c-2-5-3-10-3-16z" fill="#2B6A50"/>
+  <path d="M48 92c4-34 36-52 72-52s68 18 72 52z" fill="#B8322A"/>
+  <circle cx="84" cy="76" r="3" fill="#FAFBF8"/>
+  <circle cx="108" cy="62" r="3" fill="#FAFBF8"/>
+  <circle cx="134" cy="72" r="3" fill="#FAFBF8"/>
+  <circle cx="156" cy="82" r="3" fill="#FAFBF8"/>
+  <circle cx="98" cy="86" r="3" fill="#FAFBF8"/>
+  <ellipse cx="170" cy="64" rx="16" ry="9" fill="#E9B824" transform="rotate(-24 170 64)"/>
+  <ellipse cx="190" cy="82" rx="16" ry="9" fill="#E9B824" transform="rotate(12 190 82)"/>
+  <path d="M70 52c10-14 24-14 30-4-8 10-22 14-30 4z" fill="#2B6A50"/>
+</svg>

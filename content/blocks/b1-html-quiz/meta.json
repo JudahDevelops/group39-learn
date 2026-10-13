@@ -1,0 +1,9 @@
+{
+  "id": "1zz448tc",
+  "slug": "b1-html-quiz",
+  "type": "quiz",
+  "title": "HTML quiz",
+  "runner": "none",
+  "estMinutes": 10,
+  "sourceRef": "course-content.md:1544-1798"
+}

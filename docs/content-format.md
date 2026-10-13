@@ -649,6 +649,92 @@ The level L is 0 before the deadline d, 1 from d until 2d, and 2 from 2d on.
 - `## --widget-- <name>`: the name is kebab-case and names a React widget registered in the lesson player. The fence is a `json` object with that widget's props.
 - `## --prompt--` and `## --why--` are optional. Whether a name exists is not checked by this format.
 
+#### The widgets
+
+Four widgets are registered (code in `src/screens/widgets/`). Their props are checked when the screen opens, not by `validate:content`: a wrong prop makes the widget show "This interactive part could not load." and lets the learner carry on, so open the lesson once after writing one. Text in props is plain text, not markdown. A `tier` in a card or step is one of the names in `tiers`.
+
+| Widget | Lesson | Scored | Props |
+|---|---|---|---|
+| `escalation-slider` | 3.5 | only with `target` | `deadlineHours`: 24, 72 or 168. `maxHours`: a whole number above `2 * deadlineHours`, up to 1000. `target` (optional): 1 or 2 |
+| `tier-sorter` | 3.2, 3.3 | yes | `tiers`: 2 to 6 different names. `cards`: 2 to 20 of `{ "text", "tier" }`, each text different |
+| `data-flow-tracer` | 3.4 | yes | `title`. `tiers`: 2 to 6 different names. `steps`: 2 to 20 of `{ "text", "tier" }`, in the order of the flow |
+| `request-response` | 3.1 | no | `request`: `{ "method", "path", "body" }`. `response`: `{ "status", "statusText", "body" }`. `stops`: 3 to 12 of `{ "label", "tier" }` |
+
+**`escalation-slider`.** The learner slides t, the hours a complaint has been open, and sees the level L and who has been emailed (nobody, then the hall warden, then the hall warden and Student Affairs) on a timeline marked at d and 2d. With no `target` it is an explorer and never reports. With `target` it asks "Move the slider to the first moment the hall warden is emailed." (`1`) or "...Student Affairs is emailed." (`2`), has its own Check, and is right only at the first hour of that level: d for 1, 2d for 2. The slider moves one hour at a time, and two buttons nudge it by exactly one hour. The player cannot tell the two modes apart, so a scored slider does not hold Continue back and shows `--why--` under the slider from the start: leave `--why--` out of a scored slider screen, or write one that does not give the answer away.
+
+````markdown
+## --widget-- escalation-slider
+
+```json
+{ "deadlineHours": 72, "maxHours": 216, "target": 1 }
+```
+````
+
+**`tier-sorter`.** The learner taps a card, then the tier it belongs to, and can move a card again until Check. Check waits until every card has a tier. A wrong result says "2 of 5 cards are in the right tier." Cards come in a new random order each time.
+
+````markdown
+## --widget-- tier-sorter
+
+```json
+{
+  "tiers": ["Client", "Logic", "Data", "Output"],
+  "cards": [
+    { "text": "Student Portal", "tier": "Client" },
+    { "text": "Room Allocation", "tier": "Logic" },
+    { "text": "Complaint history and audit log", "tier": "Data" },
+    { "text": "Email Notification Service", "tier": "Output" }
+  ]
+}
+```
+````
+
+**`data-flow-tracer`.** One flow (F1 to F4), one step at a time. The learner taps the tier that handles the step. A wrong tier is counted and cannot be tapped again for that step; the right one moves the flow there and the arrows between the tiers light up and animate. Check at the end is correct only if no pick was wrong, so the first attempt decides: "You picked a wrong tier 3 times, on 2 of 6 steps."
+
+````markdown
+## --widget-- data-flow-tracer
+
+```json
+{
+  "title": "F2 Complaint triage",
+  "tiers": ["Client", "Logic", "Data", "Output"],
+  "steps": [
+    { "text": "Amina presses Submit in the Student Portal.", "tier": "Client" },
+    { "text": "The engine sets the category, the urgency and the deadline.", "tier": "Logic" },
+    { "text": "The complaint is saved in PostgreSQL.", "tier": "Data" },
+    { "text": "The maintenance officer is emailed.", "tier": "Output" }
+  ]
+}
+```
+````
+
+**`request-response`.** Back and Next step a request from the first box to the deepest one and the response back. `method` is `GET`, `POST`, `PUT`, `PATCH` or `DELETE`, `path` starts with `/`, and `body` is an object, a list, or `null` (or left out, for a `GET`). The boxes are the different `tier` values of `stops`, top to bottom in the order they first appear. The stops must reach the deepest box and then come back by at least one stop. The request shows from the first stop; the response appears from the stop after the deepest box.
+
+````markdown
+## --widget-- request-response
+
+```json
+{
+  "request": {
+    "method": "POST",
+    "path": "/api/complaints",
+    "body": { "description": "Water is pouring from the ceiling near the light" }
+  },
+  "response": {
+    "status": 201,
+    "statusText": "Created",
+    "body": { "id": 482, "category": "plumbing", "urgency": "urgent", "status": "Open" }
+  },
+  "stops": [
+    { "label": "The browser sends the form to the server.", "tier": "Browser" },
+    { "label": "The server applies the rules.", "tier": "Server" },
+    { "label": "The database stores the complaint.", "tier": "Database" },
+    { "label": "The server sends back a response.", "tier": "Server" },
+    { "label": "The browser shows the response.", "tier": "Browser" }
+  ]
+}
+```
+````
+
 ### flashcard
 
 <!-- example:screen:flashcard -->

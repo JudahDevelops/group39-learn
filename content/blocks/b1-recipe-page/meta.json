@@ -1,0 +1,10 @@
+{
+  "id": "awdgizlr",
+  "slug": "b1-recipe-page",
+  "type": "lab",
+  "title": "Build a Recipe Page",
+  "runner": "web",
+  "estMinutes": 25,
+  "sourceRef": "course-content.md:1544-1798",
+  "demo": "index.html"
+}

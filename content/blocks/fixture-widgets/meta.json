@@ -1,0 +1,9 @@
+{
+  "id": "0yrcxpff",
+  "slug": "fixture-widgets",
+  "type": "lesson",
+  "title": "Four interactive widgets",
+  "runner": "none",
+  "estMinutes": 10,
+  "sourceRef": "course-content.md:813-1196"
+}

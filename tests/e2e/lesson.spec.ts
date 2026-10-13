@@ -188,8 +188,17 @@ async function playLesson(
   await expect(page.getByText('An opening tag, the content, and a closing tag.')).toBeVisible();
   await button(page, 'Got it').click();
 
-  // 12: widget. No widget is registered under this name yet; a real one would show its own Continue.
+  // 12: widget. The escalation slider is an explorer: Continue is there from the start, and moving the
+  // slider changes the level and who has been emailed.
   await onScreen(page, 12);
+  const slider = page.getByRole('slider', { name: 'Time the complaint has been open, in hours' });
+  await expect(slider).toBeVisible();
+  await expect(page.getByText('L = 0', { exact: true })).toBeVisible();
+  await expect(page.getByText('Nobody', { exact: true })).toBeVisible();
+  await slider.fill('30'); // d is 24 hours in the fixture
+  await expect(page.getByText('L = 1', { exact: true })).toBeVisible();
+  await expect(page.getByText('Hall warden', { exact: true })).toBeVisible();
+  await expect(page.getByText('The level L is 0 before the deadline d')).toBeVisible();
   await expect(button(page, 'Continue')).toBeEnabled();
   await cont(page);
 

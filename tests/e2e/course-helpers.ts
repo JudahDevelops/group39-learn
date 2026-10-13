@@ -52,6 +52,7 @@ export class BuiltCourse {
     private readonly blocks: (BuiltSummary & { trackId: string })[],
     private readonly steps: Map<string, string[]>,
     private readonly quizzes: Map<string, BuiltQuiz>,
+    private readonly tracks: BuiltCurriculum['tracks'],
   ) {}
 
   /** Fetches the curriculum, then the step ids of every workshop and the questions of every quiz. */
@@ -61,14 +62,13 @@ export class BuiltCourse {
       expect(response.ok(), `GET /content/${path}`).toBe(true);
       return (await response.json()) as T;
     };
-    const { tracks } = await getJson<BuiltCurriculum>('curriculum.json');
-    const blocks = [...tracks]
-      .sort((a, b) => TRACK_RANK[a.id] - TRACK_RANK[b.id])
-      .flatMap((track) =>
-        track.chapters.flatMap((chapter) =>
-          chapter.blocks.map((block) => ({ ...block, trackId: track.id })),
-        ),
-      );
+    const curriculum = await getJson<BuiltCurriculum>('curriculum.json');
+    const tracks = [...curriculum.tracks].sort((a, b) => TRACK_RANK[a.id] - TRACK_RANK[b.id]);
+    const blocks = tracks.flatMap((track) =>
+      track.chapters.flatMap((chapter) =>
+        chapter.blocks.map((block) => ({ ...block, trackId: track.id })),
+      ),
+    );
     const steps = new Map<string, string[]>();
     const quizzes = new Map<string, BuiltQuiz>();
     await Promise.all(
@@ -85,12 +85,36 @@ export class BuiltCourse {
         }
       }),
     );
-    return new BuiltCourse(blocks, steps, quizzes);
+    return new BuiltCourse(blocks, steps, quizzes, tracks);
   }
 
   /** Every block in course order (A, B, then Z). */
   order(): (BuiltSummary & { trackId: string })[] {
     return this.blocks;
+  }
+
+  /** The slugs of every block in a track (e.g. "Z" for the fixtures), in course order. */
+  slugsOf(trackId: string): string[] {
+    return this.blocks.filter((b) => b.trackId === trackId).map((b) => b.slug);
+  }
+
+  /**
+   * The "n of m done" texts the map shows, one per track and per chapter, each with how many times it
+   * appears. `done` lists the slugs of blocks that are finished. Optional blocks do not count.
+   */
+  doneLabels(done: readonly string[] = []): Map<string, number> {
+    const finished = new Set(done);
+    const labels = new Map<string, number>();
+    const add = (blocks: BuiltSummary[]) => {
+      const counted = blocks.filter((b) => !b.optional);
+      const text = `${counted.filter((b) => finished.has(b.slug)).length} of ${counted.length} done`;
+      labels.set(text, (labels.get(text) ?? 0) + 1);
+    };
+    for (const track of this.tracks) {
+      add(track.chapters.flatMap((chapter) => chapter.blocks));
+      for (const chapter of track.chapters) add(chapter.blocks);
+    }
+    return labels;
   }
 
   summary(slug: string): BuiltSummary {
@@ -157,6 +181,17 @@ export function plain(html: string): string {
     .replace(/&(lt|gt|quot|apos|amp);/g, (_, name: string) => named[name])
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+/** Expects the map to show exactly the "n of m done" texts that the built course implies. */
+export async function expectDoneLabels(
+  page: Page,
+  course: BuiltCourse,
+  done: readonly string[] = [],
+): Promise<void> {
+  for (const [text, times] of course.doneLabels(done)) {
+    await expect(page.getByText(text, { exact: true }), text).toHaveCount(times);
+  }
 }
 
 /** Writes progress rows into localStorage. Load a page afterwards: the app reads them on load. */

@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { expect, test } from './course-helpers';
+import { expect, expectDoneLabels, test } from './course-helpers';
 import { signInAndOnboard } from './helpers';
 
 async function openReview(page: Page, url: string) {
@@ -64,7 +64,7 @@ test('leaving without marking it leaves the door as it was', async ({ page, cour
   await page.getByRole('button', { name: 'Back to the map' }).click();
   await expect(page).toHaveURL('/learn');
   await expect(page.getByRole('link', { name: /Z1-05/ })).not.toHaveAccessibleName(/Done/);
-  await expect(page.getByText('0 of 6 done')).toHaveCount(2);
+  await expectDoneLabels(page, course);
 });
 
 test.describe('375 px phone', () => {

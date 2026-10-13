@@ -75,17 +75,9 @@ test('Continue opens the same block the map marks as next up', async ({ page, co
 test('when everything is done the button says "Review it again"', async ({ page, course }) => {
   await signInAndOnboard(page);
   await finishRealCourse(page, course);
-  const fixtures = [
-    'fixture-lesson',
-    'fixture-workshop',
-    'fixture-lab',
-    'fixture-quiz',
-    'fixture-project',
-    'fixture-review',
-  ];
   await seedProgress(
     page,
-    fixtures.flatMap((slug) => course.doneEntries(slug)),
+    course.slugsOf('Z').flatMap((slug) => course.doneEntries(slug)),
   );
   await page.goto('/');
   // Everything done: the block finished last is the one to review.

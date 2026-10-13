@@ -1,0 +1,10 @@
+{
+  "id": "5jh4nxzr",
+  "slug": "b1-student-profile",
+  "type": "workshop",
+  "title": "Build a Student Profile Page",
+  "runner": "web",
+  "estMinutes": 15,
+  "sourceRef": "course-content.md:1544-1626,1017",
+  "demo": "index.html"
+}
