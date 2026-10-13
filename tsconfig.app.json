@@ -21,5 +21,12 @@
     "noUncheckedSideEffectImports": true,
     "types": ["vite/client"]
   },
-  "include": ["src", "tests/unit"]
+  "include": [
+    "src",
+    "tests/unit",
+    "verify",
+    "scripts/lib/verify-plan.ts",
+    "scripts/lib/verify-run.ts"
+  ],
+  "exclude": ["tests/unit/verify.cli.test.ts"]
 }

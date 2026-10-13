@@ -822,3 +822,39 @@ Problems are printed as `content/blocks/<slug>/<file>:<line>: <message>`.
 - `blocks/<slug>.json`: `{ type, meta, roomCode, ... }` plus the parsed content under a key by type: `lesson`, `steps`, `lab`, `review`, `quiz` (also for exams) or `project`.
 
 Types for all of it are exported from `src/content/schema.ts`. The app reads it with `fetchCurriculum()` and `fetchBlock(slug)` from `src/content/loader.ts`.
+
+## 14. Verify your content
+
+`npm run validate:content` checks the shape. `npm run verify:challenges` checks that every challenge **works**: it runs your code in a headless browser with the same runner the app uses. Run it after you write or change a step, lab or typein screen.
+
+| Command | What it does |
+|---|---|
+| `npm run verify:challenges` | Verifies everything in `content/`, fixtures included |
+| `npm run verify:challenges -- --block <slug>` | Verifies one block. Only that block's own files have to validate |
+| `npm run verify:challenges -- --content <dir>` | Uses another content folder |
+| `npm run verify:challenges -- --strict` | A skipped check counts as a failure (exit 1) |
+
+| What | Rule |
+|---|---|
+| Workshop step, lab, lesson `typein` screen | Run the tests on the **seed**: at least one must fail. Run them on the **solution**: all must pass. A seed that cannot run (a syntax error) counts as failing |
+| `::: tryit` block (concept screen or review) | Running the code raises no uncaught error and no syntax error. `console.log` and `console.error` calls are fine |
+| `python`, `sql`, `fastapi` | Skipped until that runner is built |
+
+It needs Chromium. Locally, set `PW_CHROMIUM_PATH` to a Chromium or `chrome-headless-shell` binary (see `docs/style-guide.md`). CI installs its own. A run builds its harness into `.verify-dist/` (git-ignored, removed afterwards) and never writes `public/content/`.
+
+### Reading the output
+
+One line per problem, then a summary: `16 checked, 0 failed, 0 skipped`. A "check" is one step, lab, typein screen or try-it block. A check with two problems prints two lines and counts as one failed.
+
+| Line | Meaning and fix |
+|---|---|
+| `content/blocks/x/03.md: the seed already passes every test` | A learner would pass without typing. Make a test fail on the seed, or leave out of the seed the part the step adds |
+| `content/blocks/x/03.md: the solution fails test 2: <message> (<detail>)` | The solution breaks the second test (counted from 1, in file order). `<message>` is that test's text. `<detail>` is the assertion's own wording, such as `expected 0 to equal 1`. Fix the solution or the test |
+| `content/blocks/x/03.md: the solution could not run: <reason>` | Nothing was tested: a syntax error, a loop that never ends, or a timeout |
+| `content/blocks/x/lesson.md: screen 6 (typein): ...` | The same checks on a lesson screen. Screens count from 1 |
+| `content/blocks/x/review.md: try it 2: running the code raises an uncaught error: <error>` | The code in the second try-it block throws. A lesson names it `screen N (try it)` |
+| `content/blocks/x/review.md: try it 2: running the code fails: <reason>` | The code has a syntax error or a loop that never ends |
+| `skipped: python runner not built yet (content/blocks/x/03.md)` | Not checked yet. Not an error, unless you pass `--strict` |
+| `... the web runner could not start: ...` or `... the check could not run: ...` | The checking tool broke, not your content. Run it again, then report it |
+
+Exit code 0 means every check passed. 1 means a challenge is broken, the content does not validate, or `--strict` met a skipped check. 2 means the command could not run (unknown option, no such block, no browser).

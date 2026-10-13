@@ -16,6 +16,7 @@
     "test:e2e": "playwright test",
     "content": "tsx scripts/build-content.ts",
     "validate:content": "tsx scripts/validate-content.ts",
+    "verify:challenges": "tsx scripts/verify-challenges.ts",
     "new:step": "tsx scripts/new-step.ts",
     "format": "prettier --write ."
   },

@@ -13,21 +13,28 @@ describe('content/ fixtures', () => {
     Object.entries(raw).map(([path, text]) => [path.replace('../../content/', ''), text]),
   );
   const result = loadContent(files);
+  // Only chapter Z1 holds the one-of-each fixtures; real chapters and Z2 (widgets) sit alongside.
+  const z1 = result.curriculum?.tracks
+    .find((t) => t.id === 'Z')
+    ?.chapters.find((c) => c.id === 'Z1');
+  const fixtures = (z1?.blocks ?? []).map((slug) => {
+    const block = result.blocks.get(slug);
+    if (!block) throw new Error(`fixture block "${slug}" did not load`);
+    return block;
+  });
 
   it('validates with no issues', () => {
     expect(formatIssues(result.issues)).toBe('');
   });
 
   it('has one fixture block of each type in track Z, chapter Z1', () => {
-    const types = [...result.blocks.values()].map((b) => b.type).sort();
+    const types = fixtures.map((b) => b.type).sort();
     expect(types).toEqual(['lab', 'lesson', 'project', 'quiz', 'review', 'workshop']);
-    expect(
-      result.curriculum?.tracks.map((t) => [t.id, t.fixture, t.chapters.map((c) => c.id)]),
-    ).toEqual([['Z', true, ['Z1']]]);
+    expect(result.curriculum?.tracks.find((t) => t.id === 'Z')?.fixture).toBe(true);
   });
 
   it('the fixture lesson uses every screen type', () => {
-    const lesson = [...result.blocks.values()].find((b) => b.type === 'lesson');
+    const lesson = fixtures.find((b) => b.type === 'lesson');
     if (lesson?.type !== 'lesson') throw new Error('no fixture lesson');
     const used = new Set(lesson.lesson.screens.map((s) => s.type));
     expect([...used].sort()).toEqual([...SCREEN_TYPES].sort());
@@ -38,7 +45,7 @@ describe('content/ fixtures', () => {
   });
 
   it('the fixture workshop, lab and quiz have the agreed shape', () => {
-    const blocks = [...result.blocks.values()];
+    const blocks = fixtures;
     const workshop = blocks.find((b) => b.type === 'workshop');
     const lab = blocks.find((b) => b.type === 'lab');
     const quiz = blocks.find((b) => b.type === 'quiz');

@@ -13,5 +13,11 @@
     "strict": true,
     "types": ["node"]
   },
-  "include": ["vite.config.ts", "playwright.config.ts", "vitest.config.ts"]
+  "include": [
+    "vite.config.ts",
+    "vite.verify.config.ts",
+    "playwright.config.ts",
+    "vitest.config.ts",
+    "tests/unit/verify.cli.test.ts"
+  ]
 }

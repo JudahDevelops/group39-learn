@@ -11,3 +11,4 @@ spikes/**/node_modules/
 *.tsbuildinfo
 .e2e-dist/
 .obsidian/
+.verify-dist/
