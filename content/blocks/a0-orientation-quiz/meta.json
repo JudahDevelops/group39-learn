@@ -1,0 +1,9 @@
+{
+  "id": "rcd0z5kn",
+  "slug": "a0-orientation-quiz",
+  "type": "quiz",
+  "title": "Orientation quiz",
+  "runner": "none",
+  "estMinutes": 8,
+  "sourceRef": "course-content.md:74-252"
+}

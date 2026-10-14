@@ -1,6 +1,31 @@
 {
   "tracks": [
     {
+      "id": "A",
+      "title": "Understand and defend",
+      "chapters": [
+        {
+          "id": "A0",
+          "title": "Orientation",
+          "blocks": [
+            "a0-lecturer-brief",
+            "a0-project-on-one-page",
+            "a0-integrity-ai-code",
+            "a0-orientation-quiz"
+          ]
+        },
+        {
+          "id": "A2",
+          "title": "Problem, aim and objectives",
+          "blocks": [
+            "a2-problem-statement",
+            "a2-aim-objectives",
+            "a2-problem-aim-quiz"
+          ]
+        }
+      ]
+    },
+    {
       "id": "B",
       "title": "Build the IHMS",
       "chapters": [
