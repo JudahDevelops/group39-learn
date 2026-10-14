@@ -1,0 +1,10 @@
+{
+  "id": "zpx1a1jf",
+  "slug": "b1-staff-dashboard",
+  "type": "lab",
+  "title": "Build the Staff Dashboard Page",
+  "runner": "web",
+  "estMinutes": 30,
+  "sourceRef": "course-content.md:950,1057-1066,1627-1796",
+  "demo": "staff.html"
+}

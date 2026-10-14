@@ -1,0 +1,10 @@
+{
+  "id": "tcenr3h6",
+  "slug": "b1-complaint-form",
+  "type": "workshop",
+  "title": "Build the Complaint Form",
+  "runner": "web",
+  "estMinutes": 40,
+  "sourceRef": "course-content.md:949,1015-1023,1057-1066,1627-1796",
+  "demo": "student.html"
+}
