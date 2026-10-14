@@ -1,0 +1,9 @@
+{
+  "id": "kpv0u6d7",
+  "slug": "a3-architecture-quiz",
+  "type": "quiz",
+  "title": "Architecture quiz",
+  "runner": "none",
+  "estMinutes": 12,
+  "sourceRef": "course-content.md:815-1193"
+}

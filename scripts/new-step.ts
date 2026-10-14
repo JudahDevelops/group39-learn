@@ -194,7 +194,8 @@ function starterFor(
       return { file: 'review.md', text: 'TODO: a short summary of the chapter.\n' };
     case 'quiz':
     case 'exam': {
-      const text = 'TODO: question text?';
+      // The slug keeps the stub's id (a hash of the text) unique while two new quizzes sit side by side.
+      const text = `TODO: question text for ${slug}?`;
       return {
         file: 'quiz.md',
         text: [

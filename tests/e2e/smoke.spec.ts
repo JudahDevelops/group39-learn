@@ -18,16 +18,18 @@ test('home shows the hero, today and an empty week', async ({ page }) => {
 
 test('nav links work', async ({ page }) => {
   await signInAndOnboard(page);
+  // The top bar's links only: map doors such as "Citations and References" also contain these words.
+  const nav = page.getByRole('navigation', { name: 'Main' });
 
-  await page.getByRole('link', { name: 'Learn' }).click();
+  await nav.getByRole('link', { name: 'Learn' }).click();
   await expect(page).toHaveURL('/learn');
   await expect(page.getByRole('heading', { name: 'Learn' })).toBeVisible();
 
-  await page.getByRole('link', { name: 'Reference' }).click();
+  await nav.getByRole('link', { name: 'Reference' }).click();
   await expect(page).toHaveURL(/\/reference\//);
   await expect(page.getByRole('heading', { name: 'Reference' })).toBeVisible();
 
-  await page.getByRole('link', { name: 'Leaderboard' }).click();
+  await nav.getByRole('link', { name: 'Leaderboard' }).click();
   await expect(page).toHaveURL('/leaderboard');
   await expect(page.getByRole('heading', { name: 'Leaderboard' })).toBeVisible();
 });

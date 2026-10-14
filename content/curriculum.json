@@ -22,6 +22,20 @@
             "a2-aim-objectives",
             "a2-problem-aim-quiz"
           ]
+        },
+        {
+          "id": "A3",
+          "title": "The architecture",
+          "blocks": [
+            "a3-how-web-apps-work",
+            "a3-what-is-a-tier",
+            "a3-ihms-tiers",
+            "a3-data-flows",
+            "a3-triage-escalation-engine",
+            "a3-stack-and-diagram",
+            "a3-architecture-review",
+            "a3-architecture-quiz"
+          ]
         }
       ]
     },
