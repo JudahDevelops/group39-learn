@@ -1,0 +1,9 @@
+{
+  "id": "wmfdqwn9",
+  "slug": "a1-research-quiz",
+  "type": "quiz",
+  "title": "Research quiz",
+  "runner": "none",
+  "estMinutes": 10,
+  "sourceRef": "course-content.md:259-714"
+}

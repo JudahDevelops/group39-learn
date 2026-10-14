@@ -15,6 +15,22 @@
           ]
         },
         {
+          "id": "A1",
+          "title": "How we did the research",
+          "blocks": [
+            "a1-understanding-the-topic",
+            "a1-research-questions",
+            "a1-consensus-and-csv",
+            "a1-reading-a-paper",
+            "a1-five-variable-audit",
+            "a1-verifying-sources",
+            "a1-ai-gap-analysis",
+            "a1-value-add",
+            "a1-research-review",
+            "a1-research-quiz"
+          ]
+        },
+        {
           "id": "A2",
           "title": "Problem, aim and objectives",
           "blocks": [
