@@ -36,6 +36,26 @@
             "a3-architecture-review",
             "a3-architecture-quiz"
           ]
+        },
+        {
+          "id": "A4",
+          "title": "Reading the group paper",
+          "blocks": [
+            "a4-paper-structure",
+            "a4-introduction-related-works",
+            "a4-methodology",
+            "a4-citations-references",
+            "a4-reading-paper-quiz"
+          ]
+        },
+        {
+          "id": "A5",
+          "title": "Presenting and defending",
+          "blocks": [
+            "a5-twelve-slide-deck",
+            "a5-presenting",
+            "a5-defence-questions"
+          ]
         }
       ]
     },

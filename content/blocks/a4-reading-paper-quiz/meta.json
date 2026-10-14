@@ -1,0 +1,9 @@
+{
+  "id": "nhx8r5vk",
+  "slug": "a4-reading-paper-quiz",
+  "type": "quiz",
+  "title": "Reading the paper quiz",
+  "runner": "none",
+  "estMinutes": 10,
+  "sourceRef": "course-content.md:1199-1388"
+}
