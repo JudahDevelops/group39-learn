@@ -1,0 +1,10 @@
+{
+  "id": "aam54qx4",
+  "slug": "b2-food-menu",
+  "type": "workshop",
+  "title": "Build a Food Menu",
+  "runner": "web",
+  "estMinutes": 40,
+  "sourceRef": "course-content.md:1801-2043",
+  "demo": "menu.html"
+}

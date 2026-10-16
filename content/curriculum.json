@@ -95,6 +95,18 @@
             "b1-html-review",
             "b1-html-quiz"
           ]
+        },
+        {
+          "id": "B2",
+          "title": "CSS",
+          "blocks": [
+            "b2-css-basics",
+            "b2-box-model",
+            "b2-flexbox-and-grid",
+            "b2-phones-badges-states",
+            "b2-food-menu",
+            "b2-business-card"
+          ]
         }
       ]
     },

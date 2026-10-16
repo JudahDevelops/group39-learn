@@ -1,0 +1,9 @@
+{
+  "id": "z1suuply",
+  "slug": "b2-box-model",
+  "type": "lesson",
+  "title": "The box model",
+  "runner": "web",
+  "estMinutes": 14,
+  "sourceRef": "course-content.md:1872-1921"
+}

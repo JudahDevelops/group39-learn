@@ -1,0 +1,10 @@
+{
+  "id": "x3hojw55",
+  "slug": "b2-business-card",
+  "type": "lab",
+  "title": "Build a Business Card",
+  "runner": "web",
+  "estMinutes": 30,
+  "sourceRef": "course-content.md:1801-2043",
+  "demo": "card.html"
+}
