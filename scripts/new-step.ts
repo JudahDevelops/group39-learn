@@ -322,15 +322,22 @@ function addBlock(values: Record<string, string | boolean | undefined>) {
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, 'meta.json'), JSON.stringify(meta, null, 2) + '\n');
   const created = ['meta.json'];
+  // With --demo, the starter's file takes the demo's name, so a new workshop or lab validates at once
+  // (validate requires `demo` to be a file in the solutions).
+  const withDemoName = (text: string): string => {
+    if (typeof values.demo !== 'string' || runner === 'none') return text;
+    const starterFile = STARTERS[runner as Exclude<Runner, 'none'>].file;
+    return text.split(`file=${starterFile}`).join(`file=${values.demo}`);
+  };
   if (type === 'workshop') {
     writeFileSync(
       join(dir, '01.md'),
-      stepSkeleton(stepId, 1, runner as Exclude<Runner, 'none'>, null),
+      withDemoName(stepSkeleton(stepId, 1, runner as Exclude<Runner, 'none'>, null)),
     );
     created.push('01.md');
   } else {
     const starter = starterFor(type, slug, runner);
-    writeFileSync(join(dir, starter.file), starter.text);
+    writeFileSync(join(dir, starter.file), withDemoName(starter.text));
     created.push(starter.file);
   }
   if (curriculum) writeFileSync(curriculumPath, JSON.stringify(curriculum, null, 2) + '\n');
