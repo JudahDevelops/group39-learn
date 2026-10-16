@@ -5,11 +5,13 @@
  *  - `previewBridge`: for the visible preview. Streams console lines and uncaught errors to the
  *    page, and stops links and forms from navigating the frame away from the learner's page.
  *  - `captureScript`: the console and error capture shared with the test harness (harness.ts).
+ *  - `fetchShim`: answers `fetch("complaints.json")` from the learner's own files (both frames).
  *
  * The frames are sandboxed without `allow-same-origin`, so the only way out is postMessage. Every
  * message carries the nonce the page chose, and the page also checks `event.source`.
  */
-import { fillTemplate, scriptElement } from './assemble';
+import type { Files } from '../types';
+import { fillTemplate, jsonForScript, normalizeName, scriptElement } from './assemble';
 import { LOOP_GUARD } from './loops';
 
 /** Fresh unguessable text for one frame. */
@@ -135,4 +137,50 @@ export function isPreviewMessage(data: unknown, nonce: string): data is PreviewM
   if (typeof data !== 'object' || data === null) return false;
   const m = data as Record<string, unknown>;
   return m.g39 === nonce && m.kind === 'log' && typeof m.line === 'string';
+}
+
+/**
+ * Inside a frame, `fetch("complaints.json")` answers from the learner's own files, the way a static
+ * server would. The frame has no origin of its own, so a relative URL would otherwise ask the app's
+ * server. A file that is not in the project gets a 404; an absolute URL goes to the real network.
+ * The answer comes a few milliseconds later, so code that forgets `await` fails as it would online.
+ */
+const FETCH_SHIM = String.raw`
+(function () {
+  var FILES = __FILES__;
+  var realFetch = window.fetch ? window.fetch.bind(window) : null;
+  var TYPES = { json: 'application/json', html: 'text/html', htm: 'text/html', css: 'text/css', js: 'text/javascript', txt: 'text/plain', csv: 'text/csv' };
+  function typeOf(name) {
+    var dot = name.lastIndexOf('.');
+    return TYPES[dot >= 0 ? name.slice(dot + 1).toLowerCase() : ''] || 'text/plain';
+  }
+  function fileName(url) {
+    var path = url.split('#')[0].split('?')[0].trim().replace(/^(?:\.\/|\/)+/, '');
+    try { return decodeURIComponent(path); } catch (e) { return path; }
+  }
+  window.fetch = function (input, init) {
+    var url = typeof input === 'string' ? input : input && input.url ? String(input.url) : String(input);
+    if (/^[a-z][a-z0-9+.-]*:/i.test(url) || url.indexOf('//') === 0) {
+      return realFetch ? realFetch(input, init) : Promise.reject(new TypeError('Failed to fetch'));
+    }
+    var name = fileName(url);
+    var found = Object.prototype.hasOwnProperty.call(FILES, name);
+    return new Promise(function (resolve) {
+      setTimeout(function () {
+        if (found) {
+          resolve(new Response(FILES[name], { status: 200, headers: { 'Content-Type': typeOf(name) } }));
+        } else {
+          resolve(new Response('Not found: ' + name, { status: 404, statusText: 'Not Found', headers: { 'Content-Type': 'text/plain' } }));
+        }
+      }, 5);
+    });
+  };
+})();
+`;
+
+/** The `<script>` that makes relative `fetch()` calls read the learner's files. */
+export function fetchShim(files: Files): string {
+  const byName: Record<string, string> = {};
+  for (const [name, contents] of Object.entries(files)) byName[normalizeName(name)] = contents;
+  return scriptElement(fillTemplate(FETCH_SHIM, { FILES: jsonForScript(byName) }));
 }

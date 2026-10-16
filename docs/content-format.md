@@ -209,6 +209,13 @@ Write the message so it tells the learner what to fix, not what the test does ("
 | `sql` | `js` | An async function body with `db` (`await db.query(...)`), `code` and `assert` | `query.sql` (plus `setup.sql`) |
 | `fastapi` | `py` | Async Python with `client`, an `httpx.AsyncClient` bound to `app` | `main.py` |
 
+**`fetch` in the web runner.** Inside the preview and the test frame, `fetch("complaints.json")` (or `./complaints.json`, with or without a `?query`) answers from the learner's own files, as a static server would. The `Content-Type` comes from the extension, so `await response.json()` works. A file that is not in the project gets a 404 (`response.ok` is `false`). An absolute URL (`https://...`) goes to the real network. The answer arrives a few milliseconds later, so a test of code that fetches waits first:
+
+```js
+await new Promise((resolve) => setTimeout(resolve, 50));
+assert.lengthOf(document.querySelectorAll('#complaints tbody tr'), 3);
+```
+
 The fence language must match the runner (`js` for `web` and `sql`, `py` for `python` and `fastapi`). `js` tests are also syntax-checked at validation time. The `web` and `python` runners are built. `sql` and `fastapi` come in later work packages and own their exact globals.
 
 ### Python tests

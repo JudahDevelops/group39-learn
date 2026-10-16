@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import type { Files } from '../types';
 import { buildPreviewDocument } from './assemble';
-import { isPreviewMessage, makeNonce, previewBridge } from './bridge';
+import { fetchShim, isPreviewMessage, makeNonce, previewBridge } from './bridge';
 
 const MAX_CONSOLE_LINES = 500;
 
@@ -28,7 +28,7 @@ export function WebPreview({
 }: WebPreviewProps) {
   const nonce = useMemo(() => makeNonce(), []);
   const srcDoc = useMemo(
-    () => buildPreviewDocument(files, { entry, inject: previewBridge(nonce) }),
+    () => buildPreviewDocument(files, { entry, inject: previewBridge(nonce) + fetchShim(files) }),
     [files, entry, nonce],
   );
   const frameRef = useRef<HTMLIFrameElement>(null);

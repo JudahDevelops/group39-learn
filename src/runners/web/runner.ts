@@ -15,7 +15,7 @@
 import type { TestCase } from '../../content/schema';
 import type { Files, RunOutput, Runner, TestResult } from '../types';
 import { buildPreviewDocument, codeForTests, locateScriptLine } from './assemble';
-import { makeNonce } from './bridge';
+import { fetchShim, makeNonce } from './bridge';
 import { isDoneMessage, testHarness, type DoneMessage } from './harness';
 
 export const DEFAULT_TIMEOUT_MS = 5000;
@@ -122,7 +122,7 @@ export function createWebRunner(host: FrameHost = domFrameHost): Runner {
         code: codeForTests(files),
         files,
       });
-      const doc = buildPreviewDocument(files, { inject: harness });
+      const doc = buildPreviewDocument(files, { inject: harness + fetchShim(files) });
 
       return new Promise<RunOutput>((resolve) => {
         let settled = false;

@@ -13,6 +13,10 @@ export const jsdomHost: FrameHost = {
       runScripts: 'dangerously',
       pretendToBeVisual: true,
       virtualConsole,
+      // jsdom has no fetch API; lend it Node's Response so the fetch shim can answer.
+      beforeParse(window) {
+        (window as unknown as { Response: typeof Response }).Response = Response;
+      },
     });
     dom.window.addEventListener('message', (event: MessageEvent) => onMessage(event.data));
     return {

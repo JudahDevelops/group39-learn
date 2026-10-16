@@ -253,3 +253,51 @@ describe('chai bundle', () => {
     expect(() => chaiAsFunctionBody('var a = 1;')).toThrow(/no trailing export/);
   });
 });
+
+describe('web runner: fetch reads the project files', () => {
+  const complaints = JSON.stringify([{ id: 482, category: 'plumbing', status: 'Open' }]);
+  const script = `
+    async function load() {
+      const response = await fetch(PATH);
+      if (!response.ok) { document.querySelector('#error').textContent = 'HTTP ' + response.status; return; }
+      const list = await response.json();
+      document.querySelector('#list').textContent = list.map((c) => c.id + ' ' + c.category).join(', ');
+    }
+    load();`;
+  const wait = 'await new Promise((r) => setTimeout(r, 50));';
+  const files = (path: string) => ({
+    'index.html': page('<p id="list"></p><p id="error"></p><script src="script.js"></script>'),
+    'script.js': script.replace('PATH', JSON.stringify(path)),
+    'complaints.json': complaints,
+  });
+
+  it('answers a relative URL with the file, as JSON', async () => {
+    const out = await runner.run(files('complaints.json'), [
+      test(
+        'Lists the complaint.',
+        `${wait} assert.equal(document.querySelector('#list').textContent, '482 plumbing');`,
+      ),
+    ]);
+    expect(out.results.map((r) => r.ok)).toEqual([true]);
+  });
+
+  it('accepts ./ and a query string', async () => {
+    const out = await runner.run(files('./complaints.json?v=2'), [
+      test(
+        'Lists the complaint.',
+        `${wait} assert.equal(document.querySelector('#list').textContent, '482 plumbing');`,
+      ),
+    ]);
+    expect(out.results.map((r) => r.ok)).toEqual([true]);
+  });
+
+  it('gives a 404 for a file that is not in the project', async () => {
+    const out = await runner.run(files('rooms.json'), [
+      test(
+        'Shows the error.',
+        `${wait} assert.equal(document.querySelector('#error').textContent, 'HTTP 404');`,
+      ),
+    ]);
+    expect(out.results.map((r) => r.ok)).toEqual([true]);
+  });
+});
