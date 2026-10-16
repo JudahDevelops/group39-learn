@@ -130,7 +130,7 @@ A **badge** is a small coloured label. A `span` is a plain piece of text inside 
 ```css file=styles.css
 :root {
   --urgent: #b42318;
-  --normal: #d97706;
+  --normal: #b45309;
   --low: #2e7d4f;
 }
 
@@ -345,7 +345,7 @@ Mark up the Staff Dashboard table. The styles are given. Wrap the `table` in a `
   --text: #1a1a1a;
   --muted: #5b6b80;
   --urgent: #b42318;
-  --normal: #d97706;
+  --normal: #b45309;
   --low: #2e7d4f;
 }
 
@@ -411,7 +411,7 @@ document.querySelectorAll('tbody td:nth-child(4) > span.badge').forEach((s) => {
 Your badges should show the right colours: red for Urgent, orange for Normal and green for Low. Check that each `class` has `badge` and the urgency, separated by a space.
 
 ```js
-const colours = { urgent: 'rgb(180, 35, 24)', normal: 'rgb(217, 119, 6)', low: 'rgb(46, 125, 79)' };
+const colours = { urgent: 'rgb(180, 35, 24)', normal: 'rgb(180, 83, 9)', low: 'rgb(46, 125, 79)' };
 document.querySelectorAll('tbody td:nth-child(4) > span.badge').forEach((s) => {
   assert.equal(getComputedStyle(s).backgroundColor, colours[s.textContent.trim().toLowerCase()]);
 });
@@ -464,7 +464,7 @@ assert.equal(getComputedStyle(document.querySelector('tr.overdue')).backgroundCo
   --text: #1a1a1a;
   --muted: #5b6b80;
   --urgent: #b42318;
-  --normal: #d97706;
+  --normal: #b45309;
   --low: #2e7d4f;
 }
 

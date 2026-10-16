@@ -105,7 +105,11 @@
             "b2-flexbox-and-grid",
             "b2-phones-badges-states",
             "b2-food-menu",
-            "b2-business-card"
+            "b2-business-card",
+            "b2-ihms-styles",
+            "b2-staff-dashboard-styles",
+            "b2-css-review",
+            "b2-css-quiz"
           ]
         }
       ]

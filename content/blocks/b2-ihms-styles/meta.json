@@ -1,0 +1,10 @@
+{
+  "id": "86gb3ew2",
+  "slug": "b2-ihms-styles",
+  "type": "workshop",
+  "title": "Style the IHMS Pages",
+  "runner": "web",
+  "estMinutes": 55,
+  "sourceRef": "course-content.md:1799-2043",
+  "demo": "student.html"
+}

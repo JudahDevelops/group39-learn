@@ -1,0 +1,10 @@
+{
+  "id": "boh4k11r",
+  "slug": "b2-staff-dashboard-styles",
+  "type": "lab",
+  "title": "Style the Staff Dashboard",
+  "runner": "web",
+  "estMinutes": 35,
+  "sourceRef": "course-content.md:1799-2043",
+  "demo": "staff.html"
+}

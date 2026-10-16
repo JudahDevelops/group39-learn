@@ -294,7 +294,7 @@ A **variable** names a value once. Define it in `:root`, with a name that starts
   --text: #1a1a1a;
   --muted: #5b6b80;
   --urgent: #b42318;
-  --normal: #d97706;
+  --normal: #b45309;
   --low: #2e7d4f;
 }
 
