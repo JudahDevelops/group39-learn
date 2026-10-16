@@ -1,10 +1,14 @@
 /**
  * "Try it": a small playground in a lesson or review. Everything is editable, Run shows the
- * result. Web code renders in a sandboxed preview; the other runners arrive in later updates, so
- * their code is shown read-only for now.
+ * result. Web code renders in a sandboxed preview, and Python code prints to a console; the other
+ * runners arrive in later updates, so their code is shown read-only for now.
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Tryit as TryitData } from '../content/schema';
+import { PythonConsole } from '../runners/python/Console';
+import { PythonNotice } from '../runners/python/Notice';
+import { usePythonRun } from '../runners/python/useRun';
+import { warmIfCached } from '../runners/python/warm';
 import { WebPreview } from '../runners/web/Preview';
 import { CodeEditor } from './CodeEditor';
 import { filesToRecord, freeEditorFiles } from './files';
@@ -12,6 +16,7 @@ import { filesToRecord, freeEditorFiles } from './files';
 export function Tryit({ tryit }: { tryit: TryitData }) {
   const initial = useMemo(() => freeEditorFiles(tryit.files), [tryit]);
 
+  if (tryit.runner === 'python') return <PythonTryit initial={initial} />;
   if (tryit.runner !== 'web') {
     return (
       <div className="tryit">
@@ -21,6 +26,36 @@ export function Tryit({ tryit }: { tryit: TryitData }) {
     );
   }
   return <WebTryit initial={initial} />;
+}
+
+function PythonTryit({ initial }: { initial: ReturnType<typeof freeEditorFiles> }) {
+  const [current, setCurrent] = useState(() => filesToRecord(initial));
+  const python = usePythonRun();
+  useEffect(() => warmIfCached(), []);
+
+  function run() {
+    void python.run(current);
+  }
+
+  return (
+    <div className="tryit">
+      <CodeEditor
+        files={initial}
+        height="auto"
+        ariaLabel="Try it code"
+        onChange={(snapshot) => setCurrent(snapshot.files)}
+        onCheck={run}
+      />
+      <div className="tryit-actions">
+        <button type="button" className="btn btn-primary" onClick={run} disabled={python.running}>
+          Run
+        </button>
+        <span className="tryit-hint">Ctrl+Enter</span>
+      </div>
+      <PythonNotice />
+      <PythonConsole output={python.output} running={python.running} />
+    </div>
+  );
 }
 
 function WebTryit({ initial }: { initial: ReturnType<typeof freeEditorFiles> }) {

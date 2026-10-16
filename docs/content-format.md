@@ -205,11 +205,67 @@ Write the message so it tells the learner what to fix, not what the test does ("
 | Runner | Fence | What the test body can use | Default file names |
 |---|---|---|---|
 | `web` | `js` | The body of an async function run in a hidden sandboxed iframe once the page has loaded (so `await` works). `document`, `window`, `code` (the learner's `index.html`, or every file joined when there is no HTML), `files` (every file's text, e.g. `files['styles.css']`) and chai's `assert` | `index.html`, `styles.css`, `script.js` |
-| `python` | `py` | Python run after the learner's code in the same namespace. `_code`, `_stdout`, `_tree`, `has_function(name)`, `defines(name)`, `prints(text)`. A failed `assert` returns the message | `main.py` |
+| `python` | `py` | Python run after the learner's `main.py`, in the same namespace. `_code`, `_stdout`, `_tree`, `has_function(name)`, `defines(name)`, `prints(text)`. A failed `assert` shows the test's message. See "Python tests" below | `main.py` |
 | `sql` | `js` | An async function body with `db` (`await db.query(...)`), `code` and `assert` | `query.sql` (plus `setup.sql`) |
 | `fastapi` | `py` | Async Python with `client`, an `httpx.AsyncClient` bound to `app` | `main.py` |
 
-The fence language must match the runner (`js` for `web` and `sql`, `py` for `python` and `fastapi`). `js` tests are also syntax-checked at validation time. The runners themselves are built in later work packages and own the exact globals.
+The fence language must match the runner (`js` for `web` and `sql`, `py` for `python` and `fastapi`). `js` tests are also syntax-checked at validation time. The `web` and `python` runners are built. `sql` and `fastapi` come in later work packages and own their exact globals.
+
+### Python tests
+
+The `python` runner is Pyodide (Python 3.14) in a Web Worker, loaded from a CDN. The first run on a device downloads about 6 MB, once. The page says so before it starts.
+
+**How a check runs**
+
+1. The learner's files are written side by side, and `main.py` is the entry. (With no `main.py`, the first `.py` file is.) It can `import` its other files.
+2. `main.py` runs once for the Output tab: what it prints appears there. If it raises an uncaught exception, including a syntax error, the learner sees the error in plain words with the line number from their own file, and **no test runs**.
+3. Otherwise each test runs on a **fresh namespace**: `main.py` runs again in a new dictionary, the helpers below are added, then the test runs in that same dictionary. A test cannot change what the next one sees. It also means the learner's code runs once per test, so keep it quick.
+4. The whole check (code plus every test) has 5 seconds. After that the worker is stopped, the learner reads "Your code ran for more than 5 seconds, so it was stopped. Check for a loop that never ends.", and a fresh worker starts on the next run.
+
+**What a test can use**
+
+| Name | What it is |
+|---|---|
+| `_code` | The source text of `main.py` |
+| `_stdout` | Everything the code printed, as one string |
+| `_tree` | `ast.parse(_code)`. Use `import ast` in the test to walk it |
+| `has_function(name)` | True when the code has a `def` (or `async def`) called `name`, at any level, so a method counts. A lambda or an imported function does not. This reads the text, so it works even if the function is never called |
+| `defines(name)` | True when running the code created a top-level name: a variable, function, class or import. Built-ins and the helpers do not count |
+| `prints(text)` | True when `text` appears in what the code printed. The letters must match exactly. `prints("")` is true only if something was printed. For a whole line use `text in _stdout.splitlines()` |
+
+A test can also call or read anything `main.py` defined (`compute_deadline("urgent")`), and import from Python's standard library.
+
+**What a result means**
+
+- A failed `assert` is the normal failure. The learner sees the test's message. `assert x == 2, "x is 1"` adds text for you, not the learner: it appears in `npm run verify:challenges` output. Without text, that output shows the failing line.
+- Any other exception in a test (`NameError`, `TypeError` and so on) is also a failure. The learner sees the test's message followed by what Python said in plain words, with the line of their own code if the error came from it.
+- An `assert` that fails inside the learner's own function is the learner's error, not the test failing.
+- `input()` cannot work, because nobody can type an answer. The learner gets a plain-words note to put the value in the code instead. Do not use `input()` in exercises.
+- Order tests from structure to behaviour: first `has_function` or a look at `_code`, then calls with fixed arguments, so the first message names the first thing missing.
+
+Example. This is a step's `--hints--` section, not a marked example, because it is checked by `npm run verify:challenges` rather than by the docs test:
+
+````markdown
+Your code should define a function called `compute_deadline`.
+
+```py
+assert has_function('compute_deadline')
+```
+
+`compute_deadline("urgent")` should return `24`.
+
+```py
+assert compute_deadline('urgent') == 24
+```
+
+Your code should print `Deadline: 24 hours`.
+
+```py
+assert prints('Deadline: 24 hours')
+```
+````
+
+A `::: tryit python` block shows a Run button and a console and has no tests. The fixture `content/blocks/fixture-python` (a workshop) and `fixture-python-lesson` (a Try it and a `typein`) are working examples.
 
 ## 6. Workshop step (`NN.md`)
 
@@ -518,7 +574,7 @@ assert.exists(document.querySelector('p'));
 A paragraph is a `p` element: `<p>`, the text, then `</p>`.
 ````
 
-Needs a block `runner` other than `none`. Exactly one editable region; solutions with the same files; at least one test. Tests use the block's runner. (`--solutions--` is required so CI can prove the screen can be passed.)
+Needs a block `runner` other than `none`. Exactly one editable region; solutions with the same files; at least one test. Tests use the block's runner. With `runner: python` the file is `main.py`. (`--solutions--` is required so CI can prove the screen can be passed.)
 
 ### predict and spotbug
 
@@ -924,7 +980,8 @@ Types for all of it are exported from `src/content/schema.ts`. The app reads it 
 |---|---|
 | Workshop step, lab, lesson `typein` screen | Run the tests on the **seed**: at least one must fail. Run them on the **solution**: all must pass. A seed that cannot run (a syntax error) counts as failing |
 | `::: tryit` block (concept screen or review) | Running the code raises no uncaught error and no syntax error. `console.log` and `console.error` calls are fine |
-| `python`, `sql`, `fastapi` | Skipped until that runner is built |
+| `python` | Runs in the real Python runner. The first check downloads Python (about 6 MB), so it takes longer. A `::: tryit python` block passes when `main.py` ends with no error inside 5 seconds. `print` is fine |
+| `sql`, `fastapi` | Skipped until that runner is built |
 
 It needs Chromium. Locally, set `PW_CHROMIUM_PATH` to a Chromium or `chrome-headless-shell` binary (see `docs/style-guide.md`). CI installs its own. A run builds its harness into `.verify-dist/` (git-ignored, removed afterwards) and never writes `public/content/`.
 
@@ -940,7 +997,7 @@ One line per problem, then a summary: `16 checked, 0 failed, 0 skipped`. A "chec
 | `content/blocks/x/lesson.md: screen 6 (typein): ...` | The same checks on a lesson screen. Screens count from 1 |
 | `content/blocks/x/review.md: try it 2: running the code raises an uncaught error: <error>` | The code in the second try-it block throws. A lesson names it `screen N (try it)` |
 | `content/blocks/x/review.md: try it 2: running the code fails: <reason>` | The code has a syntax error or a loop that never ends |
-| `skipped: python runner not built yet (content/blocks/x/03.md)` | Not checked yet. Not an error, unless you pass `--strict` |
+| `skipped: sql runner not built yet (content/blocks/x/03.md)` | Not checked yet. Not an error, unless you pass `--strict` |
 | `... the web runner could not start: ...` or `... the check could not run: ...` | The checking tool broke, not your content. Run it again, then report it |
 
 Exit code 0 means every check passed. 1 means a challenge is broken, the content does not validate, or `--strict` met a skipped check. 2 means the command could not run (unknown option, no such block, no browser).

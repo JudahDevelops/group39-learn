@@ -15,6 +15,7 @@ import {
 } from '../../editor/files';
 import { getRunner } from '../../runners';
 import { runPassed } from '../../runners/outcome';
+import type { ConsoleOutput } from '../../runners/python/Console';
 import type { Files, RunOutput } from '../../runners/types';
 import { usesScript } from '../../runners/web/assemble';
 import { useStore } from '../../store/StoreContext';
@@ -53,6 +54,12 @@ export interface CodeSession {
   getEditableCode(): string;
   check(): Promise<void>;
   checking: boolean;
+  /** Python only: runs the code with no tests and shows what it prints in the Output tab. */
+  run(): Promise<void>;
+  /** True while a check or a run is in progress. */
+  busy: boolean;
+  /** Python only: what the last run or check printed. Null before the first. */
+  console: ConsoleOutput | null;
   outcome: Outcome | null;
   /** True when the code was edited after the last check. */
   stale: boolean;
@@ -75,6 +82,8 @@ export function useCodeSession({ itemId, runner, seed, tests, onPass }: Options)
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [stale, setStale] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [runBusy, setRunBusy] = useState(false);
+  const [consoleOut, setConsoleOut] = useState<ConsoleOutput | null>(null);
 
   const latest = useRef<EditorSnapshot>({ files: {}, editableCode: '' });
   const dirty = useRef(false);
@@ -170,6 +179,7 @@ export function useCodeSession({ itemId, runner, seed, tests, onPass }: Options)
     }
     const passed = runPassed(output);
     setOutcome({ output, passed });
+    if (runner === 'python') setConsoleOut({ lines: output.logs, error: output.error ?? null });
     setStale(false);
     setChecking(false);
     running.current = false;
@@ -189,6 +199,28 @@ export function useCodeSession({ itemId, runner, seed, tests, onPass }: Options)
     }
   }, [store, itemId, runner, tests, refreshPreview]);
 
+  const run = useCallback(async () => {
+    if (runner !== 'python' || running.current) return;
+    running.current = true;
+    setRunBusy(true);
+    // Save first, as a check does: the code may never come back.
+    flush();
+    let shown: ConsoleOutput;
+    try {
+      const engine = await getRunner(runner);
+      const output = await engine.run(latest.current.files, []);
+      shown = { lines: output.logs, error: output.error ?? null };
+    } catch (err) {
+      shown = {
+        lines: [],
+        error: err instanceof Error ? err.message : 'Your code could not run.',
+      };
+    }
+    setConsoleOut(shown);
+    setRunBusy(false);
+    running.current = false;
+  }, [runner, flush]);
+
   const reset = useCallback(() => {
     const files = seedToEditorFiles(seed);
     const record = filesToRecord(files);
@@ -204,6 +236,7 @@ export function useCodeSession({ itemId, runner, seed, tests, onPass }: Options)
     setPreviewFiles(record);
     setLivePreview(!usesScript(record));
     setOutcome(null);
+    setConsoleOut(null);
     setStale(false);
   }, [store, itemId, seed]);
 
@@ -221,6 +254,9 @@ export function useCodeSession({ itemId, runner, seed, tests, onPass }: Options)
       getEditableCode,
       check,
       checking,
+      run,
+      busy: checking || runBusy,
+      console: consoleOut,
       outcome,
       stale,
       reset,
@@ -235,6 +271,9 @@ export function useCodeSession({ itemId, runner, seed, tests, onPass }: Options)
       getEditableCode,
       check,
       checking,
+      run,
+      runBusy,
+      consoleOut,
       outcome,
       stale,
       reset,

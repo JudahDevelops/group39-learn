@@ -21,7 +21,7 @@ import { report, runChecks } from './lib/verify-run';
 const USAGE = `Checks every challenge in content/ in a headless browser:
   - a step, lab or typein screen: the seed fails at least one test, the solution passes all of them
   - a try-it block: running the code raises no uncaught error
-A runner that is not built yet (python, sql, fastapi) is skipped.
+A runner that is not built yet (sql, fastapi) is skipped.
 
   npm run verify:challenges [-- options]
 

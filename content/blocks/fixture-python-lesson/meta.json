@@ -1,0 +1,8 @@
+{
+  "id": "oz94k0vy",
+  "slug": "fixture-python-lesson",
+  "type": "lesson",
+  "title": "Run your first Python code",
+  "runner": "python",
+  "estMinutes": 4
+}

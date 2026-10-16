@@ -34,6 +34,10 @@ Intelligent Hostel Management System (IHMS) for their group project and must def
   builds into its own `.e2e-dist/<port>/`, so parallel agents never test each other's build. Delete your
   `.e2e-dist/<port>/` when you finish.
   Do not download large files except the npm packages in your brief.
+- Keep your own logs and scratch files in `.e2e-dist/<your port>/` or a folder named after your WP under `/tmp`.
+  Never write into the reviewer's scratchpad folder: the reviewer's own logs live there.
+- Python e2e tests download Pyodide (about 6 MB) on first run. If they time out while another agent's e2e run is
+  going, rerun them once before reporting a failure.
 - No git push, no remote writes, no secrets in files.
 
 ## Recurring corrections

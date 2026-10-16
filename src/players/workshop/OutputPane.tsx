@@ -1,20 +1,70 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { CodeRunner } from '../../content/schema';
+import { PythonConsole } from '../../runners/python/Console';
+import { PythonNotice } from '../../runners/python/Notice';
+import { warmIfCached } from '../../runners/python/warm';
 import { WebPreview } from '../../runners/web/Preview';
 import type { Files } from '../../runners/types';
+import type { CodeSession } from './useCodeSession';
 
 interface OutputPaneProps {
   runner: CodeRunner;
   files: Files;
   /** The HTML file the preview opens. Defaults to index.html. */
   entry?: string;
+  /** The code session; the python runner needs its Run button and its console. */
+  session?: CodeSession;
 }
 
 /**
- * The right-hand pane. For the web runner: the page and a console. The other runners put their
- * own output here when they arrive (docs/design.md, "Other runners").
+ * The right-hand pane. For the web runner: the page and a console. For python: an Output tab with
+ * the console and a Run button. The other runners put their own output here when they arrive
+ * (docs/design.md, "Other runners").
  */
-export function OutputPane({ runner, files, entry }: OutputPaneProps) {
+export function OutputPane({ runner, files, entry, session }: OutputPaneProps) {
+  if (runner === 'python' && session) return <PythonOutput session={session} />;
+  return <WebOrWaiting runner={runner} files={files} entry={entry} />;
+}
+
+function PythonOutput({ session }: { session: CodeSession }) {
+  useEffect(() => warmIfCached(), []);
+  return (
+    <div className="wk-output">
+      <div className="wk-output-tabs on-dark" role="tablist" aria-label="Output">
+        <button
+          type="button"
+          role="tab"
+          id="wk-tab-output"
+          aria-selected="true"
+          aria-controls="wk-panel-output"
+          className="wk-output-tab"
+        >
+          Output
+        </button>
+        <button
+          type="button"
+          className="btn btn-secondary wk-run"
+          onClick={() => void session.run()}
+          disabled={session.busy}
+          aria-busy={session.busy}
+        >
+          Run
+        </button>
+      </div>
+      <div
+        className="wk-python"
+        role="tabpanel"
+        id="wk-panel-output"
+        aria-labelledby="wk-tab-output"
+      >
+        <PythonNotice className="wk-python-note" />
+        <PythonConsole output={session.console} running={session.busy} />
+      </div>
+    </div>
+  );
+}
+
+function WebOrWaiting({ runner, files, entry }: Omit<OutputPaneProps, 'session'>) {
   const [tab, setTab] = useState<'preview' | 'console'>('preview');
   const [lines, setLines] = useState<string[]>([]);
 

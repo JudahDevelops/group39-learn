@@ -449,6 +449,31 @@
   overflow-wrap: anywhere;
 }
 
+.wk-output-tabs .wk-run {
+  align-self: center;
+  min-height: 36px;
+  margin: 0 var(--space-3) 0 auto;
+  padding: 0 var(--space-4);
+}
+
+/* The python runner's pane: the note about Python sits under the tabs, the console fills the rest. */
+.wk-python {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.wk-python-note:not(:empty) {
+  flex: 0 0 auto;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--bench-2);
+}
+
+.wk-actions .py-notice {
+  flex: 1 1 100%;
+}
+
 .wk-output-note {
   margin: 0;
   color: var(--ink-2);
@@ -596,6 +621,10 @@
   /* A phone has no Ctrl key. */
   .wk-keyhint {
     display: none;
+  }
+
+  .wk-output-tabs .wk-run {
+    min-height: var(--touch);
   }
 
   .wk-scroll {

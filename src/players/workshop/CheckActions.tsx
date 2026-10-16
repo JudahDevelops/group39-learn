@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Modal } from './Modal';
 
 interface CheckActionsProps {
@@ -9,6 +9,8 @@ interface CheckActionsProps {
   onRun?: () => void;
   resetLabel?: string;
   confirmText?: string;
+  /** A line under the buttons, such as Python's download note on a phone. */
+  note?: ReactNode;
 }
 
 /** "Check your code", the Ctrl+Enter hint, and Reset with a confirm. */
@@ -19,6 +21,7 @@ export function CheckActions({
   onRun,
   resetLabel = 'Reset step',
   confirmText = 'Reset this step to its starting code?',
+  note,
 }: CheckActionsProps) {
   const [confirming, setConfirming] = useState(false);
   return (
@@ -44,6 +47,7 @@ export function CheckActions({
         </span>
         {resetLabel}
       </button>
+      {note}
       {confirming && (
         <Modal title={resetLabel} role="alertdialog" onClose={() => setConfirming(false)}>
           <p className="wk-text">{confirmText}</p>

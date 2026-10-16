@@ -1,0 +1,8 @@
+{
+  "id": "0t4ybxl1",
+  "slug": "fixture-python",
+  "type": "workshop",
+  "title": "Build a Complaint Deadline",
+  "runner": "python",
+  "estMinutes": 6
+}

@@ -1,0 +1,103 @@
+/* Console, note and Try it box for the python runner. Colours follow docs/design.md: the console is
+   the dark bench surface, and a stop is a correction slip (biro rule on a light wash). Mono is for
+   the lines the code printed and nothing else. */
+
+.py-console {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--space-3) var(--space-4);
+  background: var(--bench);
+  color: var(--bench-ink);
+}
+
+.py-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.py-lines {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.py-empty {
+  margin: 0;
+  font-size: var(--text-meta);
+  line-height: var(--lh-meta);
+}
+
+.py-error {
+  margin: 0;
+  max-width: 62ch;
+  padding: var(--space-3) var(--space-4);
+  background: var(--biro-wash);
+  border-left: 3px solid var(--biro);
+  border-radius: var(--radius-door);
+  color: var(--ink);
+  font-size: var(--text-ui);
+  line-height: var(--lh-ui);
+}
+
+.py-lines + .py-error {
+  margin-top: var(--space-3);
+}
+
+.py-reason {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--ink-2);
+}
+
+/* The note about Python's size and loading. */
+.py-notice {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--text-meta);
+  line-height: var(--lh-meta);
+}
+
+.wk-output .py-notice {
+  color: var(--bench-ink);
+}
+
+/* Above a lesson's bottom bar, for the typein screen. */
+.py-floating {
+  position: fixed;
+  left: 50%;
+  bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+  z-index: 4;
+  width: min(560px, calc(100% - 2 * var(--space-4)));
+  transform: translateX(-50%);
+}
+
+.py-floating .py-notice:not(:empty) {
+  padding: var(--space-3) var(--space-4);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--key);
+  border-radius: var(--radius-door);
+  color: var(--ink);
+  font-size: var(--text-ui);
+  line-height: var(--lh-ui);
+}
+
+/* A Try it box: the console sits under the Run button. */
+.tryit .py-console {
+  flex: 0 0 auto;
+  max-height: 200px;
+  border-radius: var(--radius-door);
+  background: var(--bench-2);
+}
+
+.tryit .py-notice {
+  color: var(--ink-2);
+}

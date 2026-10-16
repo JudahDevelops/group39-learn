@@ -19,11 +19,16 @@ import {
 // ---------------------------------------------------------------------------
 // The fixture blocks, as the real content loader sees them
 
-const raw = import.meta.glob<string>('../../content/blocks/fixture-*/*.{md,json}', {
-  query: '?raw',
-  import: 'default',
-  eager: true,
-});
+// The python fixtures (Z3) are left out: this test pins the plan for the web fixtures, and the python
+// runner has its own end-to-end check (tests/e2e/python.spec.ts).
+const raw = import.meta.glob<string>(
+  ['../../content/blocks/fixture-*/*.{md,json}', '!../../content/blocks/fixture-python*/*'],
+  {
+    query: '?raw',
+    import: 'default',
+    eager: true,
+  },
+);
 const files: ContentFiles = Object.fromEntries(
   Object.entries(raw).map(([path, text]) => [path.replace('../../content/', ''), text]),
 );

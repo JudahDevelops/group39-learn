@@ -24,6 +24,13 @@ const ORIGIN = 'http://g39-verify.test';
 /** The web runner stops a run after 5 s on its own; this only catches a page that stopped answering. */
 const WATCHDOG_MS = 30_000;
 
+/**
+ * The python runner has one worker, so checks wait in a queue. A call can sit behind Python's first
+ * download (cold, 6 MB) and behind runs that were stopped at 5 s, each followed by a 4 to 6 s restart.
+ * That is slow, not stuck, so a python call gets this much longer before the page is declared dead.
+ */
+const PYTHON_ALLOWANCE_MS = 120_000;
+
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -107,11 +114,13 @@ export async function openHarness(): Promise<Harness> {
           ),
         { name: HARNESS_GLOBAL, args: [runner, files, tests, timeoutMs] },
       );
+      const limitMs =
+        WATCHDOG_MS + (timeoutMs ?? 0) + (runner === 'python' ? PYTHON_ALLOWANCE_MS : 0);
       let timer: ReturnType<typeof setTimeout> | undefined;
       const watchdog = new Promise<never>((_, reject) => {
         timer = setTimeout(
-          () => reject(new Error(`the browser stopped answering for ${WATCHDOG_MS / 1000} s`)),
-          WATCHDOG_MS + (timeoutMs ?? 0),
+          () => reject(new Error(`the browser stopped answering for ${limitMs / 1000} s`)),
+          limitMs,
         );
       });
       try {

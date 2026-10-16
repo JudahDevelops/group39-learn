@@ -10,6 +10,7 @@ import { DemoModal } from './DemoModal';
 import { CorrectionSlip } from './Feedback';
 import { HelpModal, whatsappUrl } from './HelpModal';
 import { Html } from './Html';
+import { PythonNotice } from '../../runners/python/Notice';
 import { OutputPane } from './OutputPane';
 import { PlayerBar, type SegmentState } from './PlayerBar';
 import { useCheckShortcut } from './useCheckShortcut';
@@ -147,13 +148,17 @@ function StepView({ block, step, onExit, onNavigate }: PlayerProps<'workshop'> &
           }
           actions={
             <CheckActions
-              checking={session.checking}
+              checking={session.busy}
               onCheck={() => void check()}
               onReset={session.reset}
               onRun={session.livePreview ? undefined : session.refreshPreview}
+              note={step.runner === 'python' && mode === 'narrow' ? <PythonNotice /> : undefined}
             />
           }
-          output={<OutputPane runner={step.runner} files={session.previewFiles} />}
+          outputLabel={step.runner === 'python' ? 'Output' : 'Preview'}
+          output={
+            <OutputPane runner={step.runner} files={session.previewFiles} session={session} />
+          }
         />
       ) : (
         <div className="wk-loading" aria-busy="true" />

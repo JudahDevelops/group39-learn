@@ -133,6 +133,14 @@
           "blocks": [
             "fixture-widgets"
           ]
+        },
+        {
+          "id": "Z3",
+          "title": "Python runner",
+          "blocks": [
+            "fixture-python-lesson",
+            "fixture-python"
+          ]
         }
       ]
     }

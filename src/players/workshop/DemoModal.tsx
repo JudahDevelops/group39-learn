@@ -1,6 +1,9 @@
 import type { CodeRunner, SeedFile } from '../../content/schema';
 import { CodeEditor } from '../../editor/CodeEditor';
 import { freeEditorFiles } from '../../editor/files';
+import { PythonConsole } from '../../runners/python/Console';
+import { PythonNotice } from '../../runners/python/Notice';
+import { usePythonRun } from '../../runners/python/useRun';
 import { WebPreview } from '../../runners/web/Preview';
 import { Modal } from './Modal';
 
@@ -14,7 +17,7 @@ interface DemoModalProps {
   onClose: () => void;
 }
 
-/** The finished project, rendered from the solutions. Web code runs; other code is shown read-only. */
+/** The finished project, rendered from the solutions. Web and Python code run; other code is shown read-only. */
 export function DemoModal({ title, runner, files, entry, onClose }: DemoModalProps) {
   const record = Object.fromEntries(files.map((f) => [f.name, f.contents]));
   return (
@@ -23,6 +26,8 @@ export function DemoModal({ title, runner, files, entry, onClose }: DemoModalPro
         <div className="wk-demo">
           <WebPreview files={record} entry={entry} title={title} className="wk-demo-frame" />
         </div>
+      ) : runner === 'python' ? (
+        <PythonDemo files={files} record={record} />
       ) : (
         <>
           <CodeEditor
@@ -35,5 +40,31 @@ export function DemoModal({ title, runner, files, entry, onClose }: DemoModalPro
         </>
       )}
     </Modal>
+  );
+}
+
+function PythonDemo({ files, record }: { files: SeedFile[]; record: Record<string, string> }) {
+  const python = usePythonRun();
+  return (
+    <div className="tryit">
+      <CodeEditor
+        files={freeEditorFiles(files)}
+        readOnly
+        height="auto"
+        ariaLabel="Finished project code"
+      />
+      <div className="tryit-actions">
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => void python.run(record)}
+          disabled={python.running}
+        >
+          Run
+        </button>
+      </div>
+      <PythonConsole output={python.output} running={python.running} />
+      <PythonNotice />
+    </div>
   );
 }
