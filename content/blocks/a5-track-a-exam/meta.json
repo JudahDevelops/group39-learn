@@ -1,0 +1,9 @@
+{
+  "id": "uws64edg",
+  "slug": "a5-track-a-exam",
+  "type": "exam",
+  "title": "Track A exam",
+  "runner": "none",
+  "estMinutes": 30,
+  "sourceRef": "paper.md; content/blocks/a0-* to a5-*"
+}
