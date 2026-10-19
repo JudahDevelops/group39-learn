@@ -1,0 +1,9 @@
+{
+  "id": "asm4yswx",
+  "slug": "b4-functions-escalation",
+  "type": "lesson",
+  "title": "Functions and the escalation rule",
+  "runner": "python",
+  "estMinutes": 18,
+  "sourceRef": "course-content.md:2509-2571"
+}

@@ -1,0 +1,9 @@
+{
+  "id": "ljh63sbb",
+  "slug": "b4-decisions-loops-lists",
+  "type": "lesson",
+  "title": "Decisions, loops and lists",
+  "runner": "python",
+  "estMinutes": 18,
+  "sourceRef": "course-content.md:2457-2506"
+}

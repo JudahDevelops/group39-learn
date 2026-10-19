@@ -111,6 +111,18 @@
             "b2-css-review",
             "b2-css-quiz"
           ]
+        },
+        {
+          "id": "B4",
+          "title": "Python",
+          "blocks": [
+            "b4-running-python",
+            "b4-decisions-loops-lists",
+            "b4-functions-escalation",
+            "b4-dictionaries-text",
+            "b4-dates-and-times",
+            "b4-classes"
+          ]
         }
       ]
     },

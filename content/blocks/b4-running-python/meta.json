@@ -1,0 +1,9 @@
+{
+  "id": "d45gjagf",
+  "slug": "b4-running-python",
+  "type": "lesson",
+  "title": "Running Python",
+  "runner": "python",
+  "estMinutes": 15,
+  "sourceRef": "course-content.md:2418-2454"
+}

@@ -1,0 +1,9 @@
+{
+  "id": "0gzu83kn",
+  "slug": "b4-dictionaries-text",
+  "type": "lesson",
+  "title": "Dictionaries and keyword triage",
+  "runner": "python",
+  "estMinutes": 20,
+  "sourceRef": "course-content.md:2574-2652"
+}
