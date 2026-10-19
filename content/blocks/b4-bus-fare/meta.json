@@ -1,0 +1,9 @@
+{
+  "id": "m9paiq2d",
+  "slug": "b4-bus-fare",
+  "type": "lab",
+  "title": "Build a Bus Fare Splitter",
+  "runner": "python",
+  "estMinutes": 30,
+  "sourceRef": "course-content.md:2414-2770"
+}

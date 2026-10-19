@@ -1,0 +1,9 @@
+{
+  "id": "jyik4yx9",
+  "slug": "b4-grade-report",
+  "type": "workshop",
+  "title": "Build a Grade Report Printer",
+  "runner": "python",
+  "estMinutes": 40,
+  "sourceRef": "course-content.md:2414-2770"
+}

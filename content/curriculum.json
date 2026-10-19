@@ -134,7 +134,9 @@
             "b4-functions-escalation",
             "b4-dictionaries-text",
             "b4-dates-and-times",
-            "b4-classes"
+            "b4-classes",
+            "b4-grade-report",
+            "b4-bus-fare"
           ]
         }
       ]
