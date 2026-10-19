@@ -1,0 +1,10 @@
+{
+  "id": "gvb089ex",
+  "slug": "b3-bill-splitter",
+  "type": "workshop",
+  "title": "Build a Bill Splitter",
+  "runner": "web",
+  "estMinutes": 45,
+  "sourceRef": "course-content.md:2044-2319",
+  "demo": "splitter.html"
+}

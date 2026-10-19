@@ -118,6 +118,17 @@
   background: #fff;
 }
 
+/* A JavaScript-only Try it: the frame runs the code but takes no space; the console shows the result. */
+.tryit-result-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  border: 0;
+}
+
 .tryit-frame {
   display: block;
   width: 100%;

@@ -1,0 +1,9 @@
+{
+  "id": "l2h5z7f8",
+  "slug": "b3-first-javascript",
+  "type": "lesson",
+  "title": "Your first JavaScript",
+  "runner": "web",
+  "estMinutes": 15,
+  "sourceRef": "course-content.md:2046-2104"
+}

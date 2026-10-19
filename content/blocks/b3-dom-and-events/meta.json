@@ -1,0 +1,9 @@
+{
+  "id": "sjag0b8l",
+  "slug": "b3-dom-and-events",
+  "type": "lesson",
+  "title": "Changing the page: the DOM and events",
+  "runner": "web",
+  "estMinutes": 15,
+  "sourceRef": "course-content.md:2232-2319"
+}

@@ -1,0 +1,10 @@
+{
+  "id": "ghfyyii0",
+  "slug": "b3-cgpa-calculator",
+  "type": "lab",
+  "title": "Build a CGPA Calculator",
+  "runner": "web",
+  "estMinutes": 35,
+  "sourceRef": "course-content.md:2044-2319",
+  "demo": "cgpa.html"
+}

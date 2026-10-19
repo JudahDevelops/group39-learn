@@ -63,6 +63,8 @@ function WebTryit({ initial }: { initial: ReturnType<typeof freeEditorFiles> }) 
   const [shown, setShown] = useState(current);
   const [runs, setRuns] = useState(0);
   const [lines, setLines] = useState<string[]>([]);
+  // JavaScript with no HTML page has nothing to show: the frame still runs it, out of sight.
+  const [pageless] = useState(() => !Object.keys(current).some((name) => /\.html?$/i.test(name)));
 
   function run() {
     setShown(current);
@@ -84,7 +86,10 @@ function WebTryit({ initial }: { initial: ReturnType<typeof freeEditorFiles> }) 
         </button>
         <span className="tryit-hint">Ctrl+Enter</span>
       </div>
-      <div className="tryit-result">
+      <div
+        className={pageless ? 'tryit-result tryit-result-hidden' : 'tryit-result'}
+        aria-hidden={pageless || undefined}
+      >
         <WebPreview
           key={runs}
           files={shown}
@@ -93,9 +98,11 @@ function WebTryit({ initial }: { initial: ReturnType<typeof freeEditorFiles> }) 
           onConsole={setLines}
         />
       </div>
-      {lines.length > 0 && (
+      {(lines.length > 0 || pageless) && (
         <pre className="tryit-console" aria-label="Console output">
-          {lines.join('\n')}
+          {lines.length > 0
+            ? lines.join('\n')
+            : 'Nothing logged yet. Press Run to see what your code logs.'}
         </pre>
       )}
     </div>

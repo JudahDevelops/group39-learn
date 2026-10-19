@@ -113,6 +113,19 @@
           ]
         },
         {
+          "id": "B3",
+          "title": "JavaScript",
+          "blocks": [
+            "b3-first-javascript",
+            "b3-decisions-loops-arrays",
+            "b3-functions-and-objects",
+            "b3-dom-and-events",
+            "b3-dates-and-deadlines",
+            "b3-bill-splitter",
+            "b3-cgpa-calculator"
+          ]
+        },
+        {
           "id": "B4",
           "title": "Python",
           "blocks": [
