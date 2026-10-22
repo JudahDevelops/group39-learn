@@ -1,0 +1,9 @@
+{
+  "id": "zphyy2qz",
+  "slug": "b4-python-quiz",
+  "type": "quiz",
+  "title": "Python quiz",
+  "runner": "none",
+  "estMinutes": 10,
+  "sourceRef": "course-content.md:2414-2770"
+}

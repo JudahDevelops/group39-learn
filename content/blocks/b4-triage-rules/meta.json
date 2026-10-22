@@ -1,0 +1,9 @@
+{
+  "id": "tys1cbwd",
+  "slug": "b4-triage-rules",
+  "type": "workshop",
+  "title": "Code the Triage and Escalation Rules",
+  "runner": "python",
+  "estMinutes": 45,
+  "sourceRef": "course-content.md:2509-2652,4156-4177"
+}

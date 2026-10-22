@@ -1,0 +1,9 @@
+{
+  "id": "b2984vdj",
+  "slug": "b4-room-allocation",
+  "type": "lab",
+  "title": "Build the Room Allocation Function",
+  "runner": "python",
+  "estMinutes": 35,
+  "sourceRef": "course-content.md:958,4032-4096,4795-4885"
+}

@@ -136,7 +136,11 @@
             "b4-dates-and-times",
             "b4-classes",
             "b4-grade-report",
-            "b4-bus-fare"
+            "b4-bus-fare",
+            "b4-triage-rules",
+            "b4-room-allocation",
+            "b4-python-review",
+            "b4-python-quiz"
           ]
         }
       ]
