@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import type { Runner as BlockRunner } from '../../content/schema';
 import { mountPythonNotice } from '../../runners/python/floating';
-import { warmIfCached } from '../../runners/python/warm';
+import { warmIfCached as warmPythonIfCached } from '../../runners/python/warm';
+import { mountSqlNotice } from '../../runners/sql/floating';
+import { warmIfCached as warmSqlIfCached } from '../../runners/sql/warm';
 import type { GetRunner, Runner } from '../../runners/types';
 import type { RunnerStatus } from '../../screens/TypeinScreen';
 
@@ -18,12 +20,13 @@ export interface RunnerState {
 export function useRunner(kind: BlockRunner | null, getRunner: GetRunner): RunnerState {
   const [state, setState] = useState<RunnerState>({ status: 'checking', runner: null });
 
-  // A lesson's typein screen has no place for Python's "needs about N MB, once" note, so it is put
-  // above the bottom bar while a python exercise is on screen.
+  // A lesson's typein screen has no place for the "needs about N MB, once" note of Python or
+  // PostgreSQL, so it is put above the bottom bar while an exercise that needs one is on screen.
   useEffect(() => {
-    if (kind !== 'python') return;
-    const remove = mountPythonNotice();
-    warmIfCached();
+    if (kind !== 'python' && kind !== 'sql') return;
+    const remove = kind === 'python' ? mountPythonNotice() : mountSqlNotice();
+    if (kind === 'python') warmPythonIfCached();
+    else warmSqlIfCached();
     return remove;
   }, [kind]);
 

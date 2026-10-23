@@ -206,7 +206,7 @@ Write the message so it tells the learner what to fix, not what the test does ("
 |---|---|---|---|
 | `web` | `js` | The body of an async function run in a hidden sandboxed iframe once the page has loaded (so `await` works). `document`, `window`, `code` (the learner's `index.html`, or every file joined when there is no HTML), `files` (every file's text, e.g. `files['styles.css']`) and chai's `assert` | `index.html`, `styles.css`, `script.js` |
 | `python` | `py` | Python run after the learner's `main.py`, in the same namespace. `_code`, `_stdout`, `_tree`, `has_function(name)`, `defines(name)`, `prints(text)`. A failed `assert` shows the test's message. See "Python tests" below | `main.py` |
-| `sql` | `js` | An async function body with `db` (`await db.query(...)`), `code` and `assert` | `query.sql` (plus `setup.sql`) |
+| `sql` | `js` | The body of an async function with `db` (`await db.query(sql, params?)` returns `{ rows, fields }`), `code` (the text of the learner's `query.sql`) and chai's `assert`. See "SQL tests" below | `query.sql`, plus `setup.sql` |
 | `fastapi` | `py` | Async Python with `client`, an `httpx.AsyncClient` bound to `app` | `main.py` |
 
 **`fetch` in the web runner.** Inside the preview and the test frame, `fetch("complaints.json")` (or `./complaints.json`, with or without a `?query`) answers from the learner's own files, as a static server would. The `Content-Type` comes from the extension, so `await response.json()` works. A file that is not in the project gets a 404 (`response.ok` is `false`). An absolute URL (`https://...`) goes to the real network. The answer arrives a few milliseconds later, so a test of code that fetches waits first:
@@ -216,7 +216,7 @@ await new Promise((resolve) => setTimeout(resolve, 50));
 assert.lengthOf(document.querySelectorAll('#complaints tbody tr'), 3);
 ```
 
-The fence language must match the runner (`js` for `web` and `sql`, `py` for `python` and `fastapi`). `js` tests are also syntax-checked at validation time. The `web` and `python` runners are built. `sql` and `fastapi` come in later work packages and own their exact globals.
+The fence language must match the runner (`js` for `web` and `sql`, `py` for `python` and `fastapi`). `js` tests are also syntax-checked at validation time. The `web`, `python` and `sql` runners are built. `fastapi` comes in a later work package and owns its exact globals.
 
 ### Python tests
 
@@ -273,6 +273,112 @@ assert prints('Deadline: 24 hours')
 ````
 
 A `::: tryit python` block shows a Run button and a console and has no tests. The fixture `content/blocks/fixture-python` (a workshop) and `fixture-python-lesson` (a Try it and a `typein`) are working examples.
+
+### SQL tests
+
+The `sql` runner is PostgreSQL 18 (PGlite, PostgreSQL compiled to WebAssembly) in a Web Worker, loaded from a CDN. The first run on a device downloads about 5.3 MB, once. The page says so before it starts. The right-hand pane is a **Results** panel: the rows of the last statement that returns rows, as a table with a row count under it. A statement with no rows shows "Query ran. No rows to show."
+
+**The two files**
+
+| File | Who writes it | What it is |
+|---|---|---|
+| `query.sql` | The learner | The editable file. It can hold several statements |
+| `setup.sql` | You | Creates the tables and rows the exercise starts with. Put it in the seed and the solutions. The learner can read it but never change it (see below) |
+
+`setup.sql` is optional. Put `query.sql` first in the seed so it is the first tab. A `::: tryit sql` block takes the same two files.
+
+**`setup.sql` is always read-only.** In a workshop step, a lab (with or without an editable region), a Try it box and a `typein` screen, the learner sees `setup.sql` as a locked tab and cannot type in it. A Check and a Run always run the block's own `setup.sql`, never the copy in the editor, so nobody can change the data the tests run against. The editable region goes in `query.sql`, never in `setup.sql`.
+
+**How a check runs**
+
+1. The database is made empty: no tables, schemas, roles or settings from the last run. Every Run and every Check starts here, so a Run never changes what a Check sees.
+2. `setup.sql` runs (if there is one), then the learner's `query.sql`. The statements go to PostgreSQL together, so they run as one transaction unless the code has its own `begin` and `commit`. If one fails, the learner sees PostgreSQL's own message, the line of `query.sql` it points at, and its detail and hint if it gives them (`relation "rooms" does not exist. Line 3 of query.sql.`). **No test runs.**
+3. Otherwise every test runs, in file order, against **the same database the learner's code left**. Tests share it: a test that writes data should expect later tests to see it.
+4. The whole check (setup, the learner's code and every test) has 5 seconds. After that the worker is stopped, the learner reads "Your query ran for more than 5 seconds, so it was stopped. Check for a join with no condition: it pairs every row with every other row.", and a fresh worker starts on the next run.
+
+**What a test can use**
+
+| Name | What it is |
+|---|---|
+| `db.query(sql, params?)` | Runs `sql` and returns `{ rows, fields }`. `rows` is a list of objects keyed by column name, with JavaScript values: `count(*)` is a number (a very large `bigint` is a `BigInt`), `numeric` is a string, a timestamp is a `Date`, `json` is an object. `fields` is `[{ name, dataTypeID }]`. With `params`, `sql` is one statement and uses `$1`, `$2`. Without `params`, `sql` may hold several statements and the answer is that of the last statement that returns rows (or `{ rows: [], fields: [] }`), so `await db.query(code)` runs the learner's own code |
+| `code` | The text of the learner's `query.sql`, for checks like `assert.match(code, /order by/i)` |
+| `assert` | chai's `assert` |
+
+When PostgreSQL refuses a query, `db.query` throws an error with its `message` and its server fields: `code` (the SQLSTATE, such as `23505` for a unique violation), `detail`, `hint`, `constraint`, `table`, `column`. Catch it to check that a constraint holds.
+
+**What a result means**
+
+- A failed `assert` is the normal failure. The learner sees the test's message. The assertion's own wording (`expected 2 to equal 3`) appears in `npm run verify:challenges` output.
+- If a query inside the test fails and the test does not catch it, the test fails. The learner sees the test's message followed by "PostgreSQL said: ..." and PostgreSQL's real words. So a test that reads a table the learner has not created yet needs no `try`: its message says what to create and PostgreSQL says the table is missing.
+- Any other exception in a test (a `TypeError` in your own test code, say) is also a failure, with no extra text for the learner.
+- To check what a **query** returns, run the learner's code again: `await db.query(code)`. Do this for a `select`. A statement that changes data (`insert`, `update`) would change it a second time, so check the **state** with a new query instead.
+- Order tests from structure to behaviour: first a look at `code`, then the rows, then the columns, so the first message names the first thing missing.
+
+Checking the rows a query returns:
+
+````markdown
+Your query should return the 3 rooms in Hall B.
+
+```js
+const { rows } = await db.query(code);
+assert.lengthOf(rows, 3);
+```
+
+Your query should show only `room_number` and `beds`.
+
+```js
+const { rows } = await db.query(code);
+assert.sameMembers(Object.keys(rows[0] ?? {}), ['room_number', 'beds']);
+```
+````
+
+Checking what the code changed:
+
+````markdown
+Room `B-217` should be in Hall B with 4 beds.
+
+```js
+const { rows } = await db.query('select hall, beds from rooms where room_number = $1', ['B-217']);
+assert.lengthOf(rows, 1);
+assert.equal(rows[0].hall, 'Hall B');
+assert.equal(rows[0].beds, 4);
+```
+````
+
+Checking the schema through `information_schema`:
+
+````markdown
+The `complaints` table should have the columns `id` and `description`, in that order.
+
+```js
+const { rows } = await db.query(
+  "select column_name from information_schema.columns where table_name = 'complaints' order by ordinal_position",
+);
+assert.deepEqual(
+  rows.map((r) => r.column_name),
+  ['id', 'description'],
+);
+```
+````
+
+Checking that a constraint refuses a row:
+
+````markdown
+Two rooms should not share a room number.
+
+```js
+let error;
+try {
+  await db.query("insert into rooms values (9, 'A-101', 'Hall A', 1)");
+} catch (e) {
+  error = e;
+}
+assert.exists(error);
+assert.equal(error.code, '23505');
+```
+````
+
+A `::: tryit sql` block shows a Run button and the Results panel and has no tests. The fixture `content/blocks/fixture-sql-workshop` (a workshop with a `setup.sql`), `fixture-sql-lab` (a lab whose seed has no editable region) and `fixture-sql-lesson` (a Try it and a `typein`) are working examples.
 
 ## 6. Workshop step (`NN.md`)
 
@@ -988,7 +1094,8 @@ Types for all of it are exported from `src/content/schema.ts`. The app reads it 
 | Workshop step, lab, lesson `typein` screen | Run the tests on the **seed**: at least one must fail. Run them on the **solution**: all must pass. A seed that cannot run (a syntax error) counts as failing |
 | `::: tryit` block (concept screen or review) | Running the code raises no uncaught error and no syntax error. `console.log` and `console.error` calls are fine |
 | `python` | Runs in the real Python runner. The first check downloads Python (about 6 MB), so it takes longer. A `::: tryit python` block passes when `main.py` ends with no error inside 5 seconds. `print` is fine |
-| `sql`, `fastapi` | Skipped until that runner is built |
+| `sql` | Runs in the real SQL runner. The first check downloads PostgreSQL (about 5.3 MB), so it takes longer. A `::: tryit sql` block passes when `setup.sql` and `query.sql` run with no error inside 5 seconds. A statement that returns no rows is fine |
+| `fastapi` | Skipped until that runner is built |
 
 It needs Chromium. Locally, set `PW_CHROMIUM_PATH` to a Chromium or `chrome-headless-shell` binary (see `docs/style-guide.md`). CI installs its own. A run builds its harness into `.verify-dist/` (git-ignored, removed afterwards) and never writes `public/content/`.
 
@@ -1004,7 +1111,7 @@ One line per problem, then a summary: `16 checked, 0 failed, 0 skipped`. A "chec
 | `content/blocks/x/lesson.md: screen 6 (typein): ...` | The same checks on a lesson screen. Screens count from 1 |
 | `content/blocks/x/review.md: try it 2: running the code raises an uncaught error: <error>` | The code in the second try-it block throws. A lesson names it `screen N (try it)` |
 | `content/blocks/x/review.md: try it 2: running the code fails: <reason>` | The code has a syntax error or a loop that never ends |
-| `skipped: sql runner not built yet (content/blocks/x/03.md)` | Not checked yet. Not an error, unless you pass `--strict` |
+| `skipped: fastapi runner not built yet (content/blocks/x/03.md)` | Not checked yet. Not an error, unless you pass `--strict` |
 | `... the web runner could not start: ...` or `... the check could not run: ...` | The checking tool broke, not your content. Run it again, then report it |
 
 Exit code 0 means every check passed. 1 means a challenge is broken, the content does not validate, or `--strict` met a skipped check. 2 means the command could not run (unknown option, no such block, no browser).

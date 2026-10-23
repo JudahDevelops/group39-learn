@@ -1,0 +1,8 @@
+{
+  "id": "uvx94m2t",
+  "slug": "fixture-sql-workshop",
+  "type": "workshop",
+  "title": "Query the Hostel Rooms",
+  "runner": "sql",
+  "estMinutes": 6
+}

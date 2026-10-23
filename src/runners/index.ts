@@ -1,5 +1,5 @@
-// The web and python runners are built (WP 1.5, WP 2.1). sql and fastapi arrive in later work
-// packages: add a case that imports the runner lazily, the way `web` does, so the map never pays
+// The web, python and sql runners are built (WP 1.5, WP 2.1, WP 3.1). fastapi arrives in a later
+// work package: add a case that imports the runner lazily, the way `web` does, so the map never pays
 // for engines it does not use.
 import type { GetRunner } from './types';
 
@@ -11,6 +11,10 @@ export const getRunner: GetRunner = async (kind) => {
   if (kind === 'python') {
     const { pythonRunner } = await import('./python/runner');
     return pythonRunner;
+  }
+  if (kind === 'sql') {
+    const { sqlRunner } = await import('./sql/runner');
+    return sqlRunner;
   }
   throw new Error(`The ${kind} runner arrives in a later update.`);
 };

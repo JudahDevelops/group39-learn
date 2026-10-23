@@ -19,10 +19,14 @@ import {
 // ---------------------------------------------------------------------------
 // The fixture blocks, as the real content loader sees them
 
-// The python fixtures (Z3) are left out: this test pins the plan for the web fixtures, and the python
-// runner has its own end-to-end check (tests/e2e/python.spec.ts).
+// The python and sql fixtures (Z3, Z4) are left out: this test pins the plan for the web fixtures, and
+// those runners have their own end-to-end checks (tests/e2e/python.spec.ts, tests/e2e/sql.spec.ts).
 const raw = import.meta.glob<string>(
-  ['../../content/blocks/fixture-*/*.{md,json}', '!../../content/blocks/fixture-python*/*'],
+  [
+    '../../content/blocks/fixture-*/*.{md,json}',
+    '!../../content/blocks/fixture-python*/*',
+    '!../../content/blocks/fixture-sql*/*',
+  ],
   {
     query: '?raw',
     import: 'default',

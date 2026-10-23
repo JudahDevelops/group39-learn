@@ -1,0 +1,8 @@
+{
+  "id": "p6mrfrlb",
+  "slug": "fixture-sql-lesson",
+  "type": "lesson",
+  "title": "Run your first SQL query",
+  "runner": "sql",
+  "estMinutes": 4
+}

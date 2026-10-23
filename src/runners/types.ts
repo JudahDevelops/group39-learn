@@ -11,6 +11,25 @@ export interface TestResult {
   detail?: string;
 }
 
+/** The rows of one SQL statement, as text, for the Results panel. */
+export interface ResultTable {
+  columns: string[];
+  /** Every value as PostgreSQL prints it; null is SQL NULL. At most the first rows of the result. */
+  rows: (string | null)[][];
+  /** How many rows the statement returned in all. `rows` may hold fewer. */
+  rowCount: number;
+  /** True for each column of numbers (they are lined up on the right). */
+  numeric: boolean[];
+}
+
+/** What the sql runner adds to a run: what the Results panel shows. */
+export interface SqlOutput {
+  /** The last statement that returns rows, or null when no statement did. */
+  table: ResultTable | null;
+  /** True when the code held no statement to run (it was empty, or only comments). */
+  empty: boolean;
+}
+
 export interface RunOutput {
   results: TestResult[];
   /** Index of the first failing test, or null when every test passed. */
@@ -19,6 +38,8 @@ export interface RunOutput {
   logs: string[];
   /** Set when the code could not run at all (syntax error, timeout). Plain text. */
   error?: string;
+  /** sql runner only: what the Results panel shows. Absent when the code could not run. */
+  sql?: SqlOutput;
 }
 
 export interface Runner {

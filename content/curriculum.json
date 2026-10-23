@@ -181,6 +181,15 @@
             "fixture-python-lesson",
             "fixture-python"
           ]
+        },
+        {
+          "id": "Z4",
+          "title": "SQL runner",
+          "blocks": [
+            "fixture-sql-lesson",
+            "fixture-sql-workshop",
+            "fixture-sql-lab"
+          ]
         }
       ]
     }

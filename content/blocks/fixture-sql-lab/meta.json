@@ -1,0 +1,8 @@
+{
+  "id": "8zwzckzx",
+  "slug": "fixture-sql-lab",
+  "type": "lab",
+  "title": "Query the Beds in Each Hall",
+  "runner": "sql",
+  "estMinutes": 6
+}

@@ -10,8 +10,7 @@ import { DemoModal } from './DemoModal';
 import { CorrectionSlip } from './Feedback';
 import { HelpModal, whatsappUrl } from './HelpModal';
 import { Html } from './Html';
-import { PythonNotice } from '../../runners/python/Notice';
-import { OutputPane } from './OutputPane';
+import { OutputPane, outputLabel, RunnerNote } from './OutputPane';
 import { PlayerBar, type SegmentState } from './PlayerBar';
 import { useCheckShortcut } from './useCheckShortcut';
 import { useCodeSession } from './useCodeSession';
@@ -152,10 +151,10 @@ function StepView({ block, step, onExit, onNavigate }: PlayerProps<'workshop'> &
               onCheck={() => void check()}
               onReset={session.reset}
               onRun={session.livePreview ? undefined : session.refreshPreview}
-              note={step.runner === 'python' && mode === 'narrow' ? <PythonNotice /> : undefined}
+              note={mode === 'narrow' ? <RunnerNote runner={step.runner} /> : undefined}
             />
           }
-          outputLabel={step.runner === 'python' ? 'Output' : 'Preview'}
+          outputLabel={outputLabel(step.runner)}
           output={
             <OutputPane runner={step.runner} files={session.previewFiles} session={session} />
           }

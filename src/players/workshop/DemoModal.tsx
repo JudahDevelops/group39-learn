@@ -4,6 +4,9 @@ import { freeEditorFiles } from '../../editor/files';
 import { PythonConsole } from '../../runners/python/Console';
 import { PythonNotice } from '../../runners/python/Notice';
 import { usePythonRun } from '../../runners/python/useRun';
+import { SqlNotice } from '../../runners/sql/Notice';
+import { SqlResults } from '../../runners/sql/Results';
+import { useSqlRun } from '../../runners/sql/useRun';
 import { WebPreview } from '../../runners/web/Preview';
 import { Modal } from './Modal';
 
@@ -17,7 +20,7 @@ interface DemoModalProps {
   onClose: () => void;
 }
 
-/** The finished project, rendered from the solutions. Web and Python code run; other code is shown read-only. */
+/** The finished project, rendered from the solutions. Web, Python and SQL code run; other code is shown read-only. */
 export function DemoModal({ title, runner, files, entry, onClose }: DemoModalProps) {
   const record = Object.fromEntries(files.map((f) => [f.name, f.contents]));
   return (
@@ -28,6 +31,8 @@ export function DemoModal({ title, runner, files, entry, onClose }: DemoModalPro
         </div>
       ) : runner === 'python' ? (
         <PythonDemo files={files} record={record} />
+      ) : runner === 'sql' ? (
+        <SqlDemo files={files} record={record} />
       ) : (
         <>
           <CodeEditor
@@ -65,6 +70,32 @@ function PythonDemo({ files, record }: { files: SeedFile[]; record: Record<strin
       </div>
       <PythonConsole output={python.output} running={python.running} />
       <PythonNotice />
+    </div>
+  );
+}
+
+function SqlDemo({ files, record }: { files: SeedFile[]; record: Record<string, string> }) {
+  const sql = useSqlRun();
+  return (
+    <div className="tryit">
+      <CodeEditor
+        files={freeEditorFiles(files)}
+        readOnly
+        height="auto"
+        ariaLabel="Finished project code"
+      />
+      <div className="tryit-actions">
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => void sql.run(record)}
+          disabled={sql.running}
+        >
+          Run
+        </button>
+      </div>
+      <SqlResults view={sql.view} running={sql.running} />
+      <SqlNotice />
     </div>
   );
 }

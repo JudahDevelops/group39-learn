@@ -15,7 +15,9 @@ import {
 } from '../../editor/files';
 import { getRunner } from '../../runners';
 import { runPassed } from '../../runners/outcome';
+import { lockOwnSetup, withOwnSetup } from '../../runners/sql/files';
 import type { ConsoleOutput } from '../../runners/python/Console';
+import { viewOf, type ResultsView } from '../../runners/sql/view';
 import type { Files, RunOutput } from '../../runners/types';
 import { usesScript } from '../../runners/web/assemble';
 import { useStore } from '../../store/StoreContext';
@@ -54,12 +56,14 @@ export interface CodeSession {
   getEditableCode(): string;
   check(): Promise<void>;
   checking: boolean;
-  /** Python only: runs the code with no tests and shows what it prints in the Output tab. */
+  /** Python and SQL only: runs the code with no tests and shows the output (what it prints, or the rows). */
   run(): Promise<void>;
   /** True while a check or a run is in progress. */
   busy: boolean;
   /** Python only: what the last run or check printed. Null before the first. */
   console: ConsoleOutput | null;
+  /** SQL only: the rows (or the error) of the last run or check. Null before the first. */
+  results: ResultsView | null;
   outcome: Outcome | null;
   /** True when the code was edited after the last check. */
   stale: boolean;
@@ -84,6 +88,7 @@ export function useCodeSession({ itemId, runner, seed, tests, onPass }: Options)
   const [checking, setChecking] = useState(false);
   const [runBusy, setRunBusy] = useState(false);
   const [consoleOut, setConsoleOut] = useState<ConsoleOutput | null>(null);
+  const [resultsOut, setResultsOut] = useState<ResultsView | null>(null);
 
   const latest = useRef<EditorSnapshot>({ files: {}, editableCode: '' });
   const dirty = useRef(false);
@@ -113,7 +118,7 @@ export function useCodeSession({ itemId, runner, seed, tests, onPass }: Options)
       .catch(() => null)
       .then((restored) => {
         if (cancelled) return;
-        const files = restored ?? seedToEditorFiles(seed);
+        const files = lockOwnSetup(restored ?? seedToEditorFiles(seed), runner, seed);
         const record = filesToRecord(files);
         latest.current = { files: record, editableCode: initialEditable(files) };
         setPreviewFiles(record);
@@ -123,7 +128,7 @@ export function useCodeSession({ itemId, runner, seed, tests, onPass }: Options)
     return () => {
       cancelled = true;
     };
-  }, [store, itemId, seed]);
+  }, [store, itemId, seed, runner]);
 
   // Leaving the step saves what is pending.
   useEffect(
@@ -163,7 +168,8 @@ export function useCodeSession({ itemId, runner, seed, tests, onPass }: Options)
     if (running.current) return;
     running.current = true;
     setChecking(true);
-    const files = latest.current.files;
+    // setup.sql is the block's own, whatever the editor holds.
+    const files = withOwnSetup(latest.current.files, runner, seed);
     refreshPreview();
     let output: RunOutput;
     try {
@@ -180,6 +186,7 @@ export function useCodeSession({ itemId, runner, seed, tests, onPass }: Options)
     const passed = runPassed(output);
     setOutcome({ output, passed });
     if (runner === 'python') setConsoleOut({ lines: output.logs, error: output.error ?? null });
+    if (runner === 'sql') setResultsOut(viewOf(output));
     setStale(false);
     setChecking(false);
     running.current = false;
@@ -197,32 +204,34 @@ export function useCodeSession({ itemId, runner, seed, tests, onPass }: Options)
         // The next passing check writes the progress again.
       }
     }
-  }, [store, itemId, runner, tests, refreshPreview]);
+  }, [store, itemId, runner, seed, tests, refreshPreview]);
 
   const run = useCallback(async () => {
-    if (runner !== 'python' || running.current) return;
+    if ((runner !== 'python' && runner !== 'sql') || running.current) return;
     running.current = true;
     setRunBusy(true);
     // Save first, as a check does: the code may never come back.
     flush();
-    let shown: ConsoleOutput;
+    let output: RunOutput;
     try {
       const engine = await getRunner(runner);
-      const output = await engine.run(latest.current.files, []);
-      shown = { lines: output.logs, error: output.error ?? null };
+      output = await engine.run(withOwnSetup(latest.current.files, runner, seed), []);
     } catch (err) {
-      shown = {
-        lines: [],
+      output = {
+        results: [],
+        firstFailure: null,
+        logs: [],
         error: err instanceof Error ? err.message : 'Your code could not run.',
       };
     }
-    setConsoleOut(shown);
+    if (runner === 'sql') setResultsOut(viewOf(output));
+    else setConsoleOut({ lines: output.logs, error: output.error ?? null });
     setRunBusy(false);
     running.current = false;
-  }, [runner, flush]);
+  }, [runner, seed, flush]);
 
   const reset = useCallback(() => {
-    const files = seedToEditorFiles(seed);
+    const files = lockOwnSetup(seedToEditorFiles(seed), runner, seed);
     const record = filesToRecord(files);
     clearTimeout(saveTimer.current);
     clearTimeout(previewTimer.current);
@@ -237,8 +246,9 @@ export function useCodeSession({ itemId, runner, seed, tests, onPass }: Options)
     setLivePreview(!usesScript(record));
     setOutcome(null);
     setConsoleOut(null);
+    setResultsOut(null);
     setStale(false);
-  }, [store, itemId, seed]);
+  }, [store, itemId, seed, runner]);
 
   const getEditableCode = useCallback(() => latest.current.editableCode, []);
 
@@ -257,6 +267,7 @@ export function useCodeSession({ itemId, runner, seed, tests, onPass }: Options)
       run,
       busy: checking || runBusy,
       console: consoleOut,
+      results: resultsOut,
       outcome,
       stale,
       reset,
@@ -274,6 +285,7 @@ export function useCodeSession({ itemId, runner, seed, tests, onPass }: Options)
       run,
       runBusy,
       consoleOut,
+      resultsOut,
       outcome,
       stale,
       reset,
