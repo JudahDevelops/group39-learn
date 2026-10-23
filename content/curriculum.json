@@ -121,8 +121,13 @@
             "b3-functions-and-objects",
             "b3-dom-and-events",
             "b3-dates-and-deadlines",
+            "b3-fetch",
             "b3-bill-splitter",
-            "b3-cgpa-calculator"
+            "b3-cgpa-calculator",
+            "b3-complaint-form-js",
+            "b3-complaint-status",
+            "b3-js-review",
+            "b3-js-quiz"
           ]
         },
         {

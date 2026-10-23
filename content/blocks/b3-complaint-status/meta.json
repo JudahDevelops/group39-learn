@@ -1,0 +1,10 @@
+{
+  "id": "8xhh0lkq",
+  "slug": "b3-complaint-status",
+  "type": "lab",
+  "title": "Build the Complaint Status Page",
+  "runner": "web",
+  "estMinutes": 40,
+  "sourceRef": "course-content.md:2232-2413",
+  "demo": "staff.html"
+}

@@ -1,0 +1,9 @@
+{
+  "id": "vkel6j81",
+  "slug": "b3-js-quiz",
+  "type": "quiz",
+  "title": "JavaScript quiz",
+  "runner": "none",
+  "estMinutes": 12,
+  "sourceRef": "course-content.md:2044-2413"
+}

@@ -1,0 +1,9 @@
+{
+  "id": "947vyqkh",
+  "slug": "b3-fetch",
+  "type": "lesson",
+  "title": "Getting data with fetch",
+  "runner": "web",
+  "estMinutes": 14,
+  "sourceRef": "course-content.md:2359-2413"
+}

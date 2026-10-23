@@ -1,0 +1,10 @@
+{
+  "id": "1ztz2chl",
+  "slug": "b3-complaint-form-js",
+  "type": "workshop",
+  "title": "Make the Complaint Form Work",
+  "runner": "web",
+  "estMinutes": 55,
+  "sourceRef": "course-content.md:2232-2413,2576-2640,3250-3260,3276,3333-3358",
+  "demo": "student.html"
+}
