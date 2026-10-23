@@ -78,6 +78,7 @@ export interface LessonFeedback {
   blockId: string;
   rating: LessonFeedbackRating;
   comment: string | null;
+  createdAt: string; // ISO timestamp
 }
 
 /** Mirrors the `project_submissions` table. */
@@ -89,6 +90,26 @@ export interface ProjectSubmission {
   jobs: unknown;
   passed: boolean;
   checkedAt: string; // ISO timestamp
+}
+
+/**
+ * Everything the admin dashboard reads: every member's rows, cut down to the columns the page uses.
+ * Each list holds rows from all members (LocalStore: the one local user).
+ */
+export interface AdminData {
+  profiles: Pick<Profile, 'id' | 'displayName'>[];
+  progress: Pick<ProgressEntry, 'userId' | 'itemId' | 'completedAt'>[];
+  xpEvents: Pick<XpEvent, 'userId' | 'createdAt'>[];
+  attempts: Attempt[];
+  quizAttempts: Pick<
+    QuizAttempt,
+    'userId' | 'quizId' | 'score' | 'total' | 'passed' | 'createdAt'
+  >[];
+  lessonFeedback: LessonFeedback[];
+  projectSubmissions: Pick<
+    ProjectSubmission,
+    'userId' | 'projectId' | 'repoUrl' | 'passed' | 'checkedAt'
+  >[];
 }
 
 export interface LeaderboardRow {
@@ -172,4 +193,12 @@ export interface ProgressStore {
 
   // --- leaderboard ---
   getLeaderboard(): Promise<LeaderboardRow[]>;
+
+  // --- admin ---
+  /**
+   * Every member's profile, progress, XP events, attempts, quiz attempts, lesson feedback and
+   * project submissions, for the admin dashboard. In Supabase the row-level security policies
+   * give admins read access to all rows and nobody else; LocalStore returns the one local user's.
+   */
+  getAdminData(): Promise<AdminData>;
 }

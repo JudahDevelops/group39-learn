@@ -63,6 +63,11 @@ export function TopBar() {
           <NavLink to="/leaderboard" className={navClass}>
             Leaderboard
           </NavLink>
+          {user.role === 'admin' && (
+            <NavLink to="/admin" className={(state) => `nav-admin ${navClass(state)}`}>
+              Admin
+            </NavLink>
+          )}
         </nav>
       )}
       {onboarded && (

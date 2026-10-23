@@ -1,0 +1,274 @@
+/* Admin dashboard (/admin). Tokens from docs/design.md only. Colour carries state: green for
+   done and passed, red for failing, ink-2 for nothing yet. Tables scroll inside .admin-scroll, so
+   the page itself never scrolls sideways. */
+
+/* Wider than the 960 px reading pages: the progress grid has a column for every module.
+   Two classes, because shell.css sets .page after this file in the bundle. */
+.page.page-admin {
+  max-width: 1280px;
+}
+
+.admin-section {
+  margin-top: var(--space-8);
+}
+
+.admin-section > h2 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-question);
+  line-height: var(--lh-question);
+  font-weight: 700;
+}
+
+.admin-section > h3 {
+  margin: var(--space-6) 0 var(--space-3);
+  font-size: var(--text-ui);
+  line-height: var(--lh-ui);
+  font-weight: 700;
+}
+
+/* Table box -------------------------------------------------------------- */
+
+.admin-scroll {
+  /* Lets the caption (below) be as wide as this box, not as wide as the table inside it. */
+  container-type: inline-size;
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-door);
+  background: var(--paper);
+}
+
+.admin-table {
+  width: 100%;
+  min-width: 34rem;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-table caption {
+  padding: 0;
+  text-align: left;
+  color: var(--ink-2);
+  font-size: var(--text-meta);
+  line-height: var(--lh-meta);
+}
+
+/* Stays at the left edge of the box and wraps to its width while the table scrolls beneath. */
+.admin-table caption > span {
+  display: block;
+  position: sticky;
+  left: 0;
+  box-sizing: border-box;
+  width: 100cqw;
+  padding: var(--space-3) var(--space-4);
+}
+
+.admin-table th,
+.admin-table td {
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--rule);
+  text-align: left;
+  vertical-align: top;
+}
+
+.admin-table thead th {
+  background: var(--plaster);
+  font-weight: 700;
+  vertical-align: bottom;
+}
+
+.admin-table tbody th {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.admin-title {
+  display: block;
+  font-weight: 600;
+}
+
+.admin-sub {
+  display: block;
+  color: var(--ink-2);
+  font-size: var(--text-meta);
+  line-height: var(--lh-meta);
+  font-weight: 400;
+}
+
+.admin-muted {
+  color: var(--ink-2);
+}
+
+/* Progress grid ------------------------------------------------------------ */
+
+.admin-grid {
+  width: max-content;
+  min-width: 100%;
+}
+
+/* The member's name stays in view while the modules scroll. */
+.admin-grid .admin-sticky {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 9rem;
+  max-width: 12rem;
+  border-right: 1px solid var(--rule);
+  background: var(--paper);
+}
+
+.admin-grid thead .admin-sticky {
+  background: var(--plaster);
+}
+
+.admin-grid td:nth-child(2) {
+  min-width: 7rem;
+  white-space: nowrap;
+}
+
+.admin-module {
+  min-width: 7rem;
+  max-width: 9rem;
+}
+
+.admin-module-code {
+  display: block;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.admin-module-title {
+  display: block;
+  color: var(--ink-2);
+  font-size: var(--text-meta);
+  line-height: var(--lh-meta);
+  font-weight: 400;
+}
+
+.admin-pct-cell {
+  min-width: 5rem;
+}
+
+.admin-pct {
+  display: block;
+  font-weight: 600;
+}
+
+.admin-pct-cell.is-empty .admin-pct {
+  color: var(--ink-2);
+  font-weight: 400;
+}
+
+.admin-bar {
+  display: block;
+  height: 4px;
+  margin-top: var(--space-1);
+  border-radius: var(--radius-door);
+  background: var(--rule);
+  overflow: hidden;
+}
+
+.admin-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--door);
+}
+
+/* A finished module reads as the green "done" state. */
+.admin-pct-cell.is-complete {
+  background: var(--door-wash);
+}
+
+.admin-pct-cell.is-complete .admin-pct {
+  color: var(--door);
+}
+
+/* Status words ---------------------------------------------------------------- */
+
+.admin-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.admin-status.is-pass {
+  color: var(--door);
+}
+
+.admin-status.is-fail {
+  color: var(--biro);
+}
+
+/* Stuck list -------------------------------------------------------------------- */
+
+.admin-message-cell {
+  min-width: 16rem;
+}
+
+.admin-message {
+  margin: 0;
+  max-width: 60ch;
+}
+
+.admin-message p {
+  margin: 0;
+}
+
+/* Projects ------------------------------------------------------------------------ */
+
+.admin-link {
+  overflow-wrap: anywhere;
+}
+
+.admin-repo-text {
+  overflow-wrap: anywhere;
+}
+
+/* Comments ------------------------------------------------------------------------- */
+
+.admin-comments {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 65ch;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-comment {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-door);
+  background: var(--paper);
+}
+
+.admin-comment p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.admin-comment-text {
+  margin-bottom: var(--space-2);
+}
+
+.admin-comment-meta {
+  color: var(--ink-2);
+  font-size: var(--text-meta);
+  line-height: var(--lh-meta);
+}
+
+.admin-comment-name {
+  font-weight: 600;
+}
+
+/* Phones: links in tables keep a 44 px target. */
+@media (max-width: 759px) {
+  .admin-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch);
+  }
+}

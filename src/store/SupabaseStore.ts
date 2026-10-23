@@ -7,14 +7,18 @@ import {
 } from '@supabase/supabase-js';
 import type { XpReason } from '../lib/xp';
 import type {
+  AdminData,
   CodeFiles,
   LeaderboardRow,
   LessonFeedbackRating,
+  LessonFeedback,
+  Attempt,
   Profile,
   ProfileUpdate,
   ProgressEntry,
   ProgressStore,
   ProjectSubmission,
+  QuizAttempt,
   Role,
   XpEvent,
 } from './types';
@@ -56,6 +60,57 @@ interface ProjectSubmissionRow {
   repo_url: string;
   run_url: string | null;
   jobs: unknown;
+  passed: boolean;
+  checked_at: string;
+}
+
+// Only the columns the admin dashboard reads (see getAdminData).
+
+interface AdminProfileRow {
+  id: string;
+  display_name: string;
+}
+
+interface AdminProgressRow {
+  user_id: string;
+  item_id: string;
+  completed_at: string;
+}
+
+interface AdminXpEventRow {
+  user_id: string;
+  created_at: string;
+}
+
+interface AdminAttemptRow {
+  user_id: string;
+  item_id: string;
+  passed: boolean;
+  failed_test_index: number | null;
+  created_at: string;
+}
+
+interface AdminQuizAttemptRow {
+  user_id: string;
+  quiz_id: string;
+  score: number;
+  total: number;
+  passed: boolean;
+  created_at: string;
+}
+
+interface AdminFeedbackRow {
+  user_id: string;
+  block_id: string;
+  rating: LessonFeedbackRating;
+  comment: string | null;
+  created_at: string;
+}
+
+interface AdminSubmissionRow {
+  user_id: string;
+  project_id: string;
+  repo_url: string;
   passed: boolean;
   checked_at: string;
 }
@@ -521,5 +576,114 @@ export class SupabaseStore implements ProgressStore {
       weekXp: r.week_xp,
       allTimeXp: r.all_time_xp,
     }));
+  }
+
+  // --- admin ---
+
+  /**
+   * Reads every member's rows with plain selects: the row-level security policies let an admin see
+   * all of them, and give anyone else only their own. Lists are read in parallel, a page at a time.
+   */
+  async getAdminData(): Promise<AdminData> {
+    const [profiles, progress, xp, attempts, quizzes, feedback, submissions] = await Promise.all([
+      fetchAll<AdminProfileRow>((from, to) =>
+        this.client
+          .from('profiles')
+          .select('id, display_name')
+          .order('display_name')
+          .order('id')
+          .range(from, to),
+      ),
+      fetchAll<AdminProgressRow>((from, to) =>
+        this.client
+          .from('progress')
+          .select('user_id, item_id, completed_at')
+          .order('user_id')
+          .order('item_id')
+          .range(from, to),
+      ),
+      fetchAll<AdminXpEventRow>((from, to) =>
+        this.client
+          .from('xp_events')
+          .select('user_id, created_at')
+          .order('created_at')
+          .order('id')
+          .range(from, to),
+      ),
+      fetchAll<AdminAttemptRow>((from, to) =>
+        this.client
+          .from('attempts')
+          .select('user_id, item_id, passed, failed_test_index, created_at')
+          .order('created_at')
+          .order('id')
+          .range(from, to),
+      ),
+      fetchAll<AdminQuizAttemptRow>((from, to) =>
+        this.client
+          .from('quiz_attempts')
+          .select('user_id, quiz_id, score, total, passed, created_at')
+          .order('created_at')
+          .order('id')
+          .range(from, to),
+      ),
+      fetchAll<AdminFeedbackRow>((from, to) =>
+        this.client
+          .from('lesson_feedback')
+          .select('user_id, block_id, rating, comment, created_at')
+          .order('created_at')
+          .order('id')
+          .range(from, to),
+      ),
+      fetchAll<AdminSubmissionRow>((from, to) =>
+        this.client
+          .from('project_submissions')
+          .select('user_id, project_id, repo_url, passed, checked_at')
+          .order('user_id')
+          .order('project_id')
+          .range(from, to),
+      ),
+    ]);
+    return {
+      profiles: profiles.map((r) => ({ id: r.id, displayName: r.display_name })),
+      progress: progress.map((r) => ({
+        userId: r.user_id,
+        itemId: r.item_id,
+        completedAt: r.completed_at,
+      })),
+      xpEvents: xp.map((r) => ({ userId: r.user_id, createdAt: r.created_at })),
+      attempts: attempts.map((r): Attempt => ({
+        userId: r.user_id,
+        itemId: r.item_id,
+        passed: r.passed,
+        failedTestIndex: r.failed_test_index,
+        createdAt: r.created_at,
+      })),
+      quizAttempts: quizzes.map(
+        (
+          r,
+        ): Pick<QuizAttempt, 'userId' | 'quizId' | 'score' | 'total' | 'passed' | 'createdAt'> => ({
+          userId: r.user_id,
+          quizId: r.quiz_id,
+          score: r.score,
+          total: r.total,
+          passed: r.passed,
+          createdAt: r.created_at,
+        }),
+      ),
+      lessonFeedback: feedback.map((r): LessonFeedback => ({
+        userId: r.user_id,
+        blockId: r.block_id,
+        rating: r.rating,
+        comment: r.comment,
+        createdAt: r.created_at,
+      })),
+      projectSubmissions: submissions.map((r) => ({
+        userId: r.user_id,
+        projectId: r.project_id,
+        repoUrl: r.repo_url,
+        passed: r.passed,
+        checkedAt: r.checked_at,
+      })),
+    };
   }
 }

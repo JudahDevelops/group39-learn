@@ -592,6 +592,12 @@
   .topbar-signout {
     padding: 0 var(--space-2);
   }
+
+  /* An admin's fourth link would push Sign out onto a third row, so on phones the dashboard is
+     reached from the profile page instead. */
+  .topbar-nav .nav-admin {
+    display: none;
+  }
 }
 
 /* Between 480 and 529 px the full chip text plus the profile circle no longer fits beside the brand,

@@ -23,7 +23,7 @@ export interface BuiltSummary {
 }
 
 interface BuiltCurriculum {
-  tracks: { id: string; chapters: { id: string; blocks: BuiltSummary[] }[] }[];
+  tracks: { id: string; chapters: { id: string; title: string; blocks: BuiltSummary[] }[] }[];
 }
 
 export interface BuiltQuiz {
@@ -53,6 +53,8 @@ export class BuiltCourse {
     private readonly steps: Map<string, string[]>,
     private readonly quizzes: Map<string, BuiltQuiz>,
     private readonly tracks: BuiltCurriculum['tracks'],
+    /** Workshop step id -> the failure message (HTML) of each of its tests. */
+    private readonly testMessages: Map<string, string[]>,
   ) {}
 
   /** Fetches the curriculum, then the step ids of every workshop and the questions of every quiz. */
@@ -71,21 +73,30 @@ export class BuiltCourse {
     );
     const steps = new Map<string, string[]>();
     const quizzes = new Map<string, BuiltQuiz>();
+    const testMessages = new Map<string, string[]>();
     await Promise.all(
       blocks.map(async (block) => {
         if (block.type === 'workshop') {
-          const built = await getJson<{ steps: { id: string }[] }>(`blocks/${block.slug}.json`);
+          const built = await getJson<{ steps: { id: string; tests: { text: string }[] }[] }>(
+            `blocks/${block.slug}.json`,
+          );
           steps.set(
             block.slug,
             built.steps.map((s) => s.id),
           );
+          for (const step of built.steps) {
+            testMessages.set(
+              step.id,
+              step.tests.map((t) => t.text),
+            );
+          }
         } else if (block.type === 'quiz' || block.type === 'exam') {
           const built = await getJson<{ quiz: BuiltQuiz }>(`blocks/${block.slug}.json`);
           quizzes.set(block.slug, built.quiz);
         }
       }),
     );
-    return new BuiltCourse(blocks, steps, quizzes, tracks);
+    return new BuiltCourse(blocks, steps, quizzes, tracks, testMessages);
   }
 
   /** Every block in course order (A, B, then Z). */
@@ -126,6 +137,31 @@ export class BuiltCourse {
   /** The item ids of a block: its step ids for a workshop, otherwise its own id. */
   itemIds(slug: string): string[] {
     return this.steps.get(slug) ?? [this.summary(slug).id];
+  }
+
+  /** The modules (chapters) of tracks A and B in course order, which the admin grid shows. */
+  modules(): { id: string; title: string; blocks: BuiltSummary[] }[] {
+    return this.tracks
+      .filter((track) => track.id !== 'Z')
+      .flatMap((track) =>
+        track.chapters.map((chapter) => ({
+          id: chapter.id,
+          title: chapter.title,
+          blocks: chapter.blocks,
+        })),
+      );
+  }
+
+  /** The failure message (HTML) of test `testIndex` of a workshop step. */
+  testMessage(stepId: string, testIndex: number): string {
+    const message = this.testMessages.get(stepId)?.[testIndex];
+    if (message === undefined) throw new Error(`step ${stepId} has no test ${testIndex}`);
+    return message;
+  }
+
+  /** How many tests a workshop step has. */
+  testCount(stepId: string): number {
+    return this.testMessages.get(stepId)?.length ?? 0;
   }
 
   quiz(slug: string): BuiltQuiz {
@@ -220,4 +256,107 @@ export async function seedXp(page: Page, amount: number, reason: string): Promis
     },
     { userId: USER_ID, amount, reason },
   );
+}
+
+/** Appends rows to one of LocalStore's lists. Load a page afterwards: the app reads them on load. */
+async function appendRows(page: Page, key: string, rows: object[]): Promise<void> {
+  await page.evaluate(
+    ({ storageKey, added }) => {
+      const old = JSON.parse(window.localStorage.getItem(storageKey) ?? '[]') as unknown[];
+      window.localStorage.setItem(storageKey, JSON.stringify([...old, ...added]));
+    },
+    { storageKey: key, added: rows },
+  );
+}
+
+/**
+ * Writes checks of a workshop step (or lab) for the signed-in person, one minute apart and ending
+ * now. A failed check names the test that failed first (`failedTestIndex`, 0-based).
+ */
+export async function seedAttempts(
+  page: Page,
+  itemId: string,
+  attempts: ({ passed: true } | { passed: false; failedTestIndex: number | null })[],
+): Promise<void> {
+  const end = Date.now();
+  await appendRows(
+    page,
+    'g39.attempts',
+    attempts.map((attempt, i) => ({
+      userId: USER_ID,
+      itemId,
+      passed: attempt.passed,
+      failedTestIndex: attempt.passed ? null : attempt.failedTestIndex,
+      createdAt: new Date(end - (attempts.length - i) * 60_000).toISOString(),
+    })),
+  );
+}
+
+/** Writes one quiz attempt (now) for the signed-in person. */
+export async function seedQuizAttempt(
+  page: Page,
+  quizId: string,
+  score: number,
+  total: number,
+  passed: boolean,
+): Promise<void> {
+  await appendRows(page, 'g39.quizAttempts', [
+    {
+      userId: USER_ID,
+      quizId,
+      score,
+      total,
+      passed,
+      wrongIds: [],
+      createdAt: new Date().toISOString(),
+    },
+  ]);
+}
+
+/** Writes one lesson feedback row for the signed-in person. */
+export async function seedFeedback(
+  page: Page,
+  blockId: string,
+  rating: 'too_easy' | 'just_right' | 'too_hard' | 'confusing',
+  comment: string | null,
+  createdAt: string,
+): Promise<void> {
+  await appendRows(page, 'g39.lessonFeedback', [
+    { userId: USER_ID, blockId, rating, comment, createdAt },
+  ]);
+}
+
+/** Writes one project submission (checked now) for the signed-in person. */
+export async function seedProjectSubmission(
+  page: Page,
+  projectId: string,
+  repoUrl: string,
+  passed: boolean,
+): Promise<void> {
+  await appendRows(page, 'g39.projectSubmissions', [
+    {
+      userId: USER_ID,
+      projectId,
+      repoUrl,
+      runUrl: null,
+      jobs: null,
+      passed,
+      checkedAt: new Date().toISOString(),
+    },
+  ]);
+}
+
+/**
+ * Makes the signed-in person an admin, the way Judah does it in the database: the stored profile
+ * gets role "admin", then the page reloads so the app reads it. Seed other rows before calling
+ * this, because the reload is what makes the app read them too.
+ */
+export async function makeAdmin(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const key = 'g39.profile';
+    const profile = JSON.parse(window.localStorage.getItem(key) ?? 'null') as object | null;
+    if (!profile) throw new Error('Sign in before making the user an admin.');
+    window.localStorage.setItem(key, JSON.stringify({ ...profile, role: 'admin' }));
+  });
+  await page.reload();
 }

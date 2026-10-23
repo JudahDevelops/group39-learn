@@ -6,6 +6,7 @@ import {
   type XpReason,
 } from '../lib/xp';
 import type {
+  AdminData,
   Attempt,
   CodeFiles,
   LeaderboardRow,
@@ -296,6 +297,7 @@ export class LocalStore implements ProgressStore {
       blockId,
       rating,
       comment: comment ?? null,
+      createdAt: new Date().toISOString(),
     };
     this.mirror.set(KEYS.lessonFeedback, [...list, feedback]);
   }
@@ -347,6 +349,66 @@ export class LocalStore implements ProgressStore {
         allTimeXp,
       },
     ];
+  }
+
+  async getAdminData(): Promise<AdminData> {
+    // One local user, so "every member" is that person. Each list is cut down to the columns the
+    // dashboard uses, the same as SupabaseStore selects them.
+    const profile = this.mirror.get<Profile | null>(KEYS.profile, null);
+    if (!profile) {
+      return {
+        profiles: [],
+        progress: [],
+        xpEvents: [],
+        attempts: [],
+        quizAttempts: [],
+        lessonFeedback: [],
+        projectSubmissions: [],
+      };
+    }
+    const mine = <T extends { userId: string }>(key: string): T[] =>
+      this.mirror.get<T[]>(key, []).filter((row) => row.userId === profile.id);
+    return {
+      profiles: [{ id: profile.id, displayName: profile.displayName }],
+      progress: mine<ProgressEntry>(KEYS.progress).map((r) => ({
+        userId: r.userId,
+        itemId: r.itemId,
+        completedAt: r.completedAt,
+      })),
+      xpEvents: mine<XpEvent>(KEYS.xpEvents).map((r) => ({
+        userId: r.userId,
+        createdAt: r.createdAt,
+      })),
+      attempts: mine<Attempt>(KEYS.attempts).map((r) => ({
+        userId: r.userId,
+        itemId: r.itemId,
+        passed: r.passed,
+        failedTestIndex: r.failedTestIndex,
+        createdAt: r.createdAt,
+      })),
+      quizAttempts: mine<QuizAttempt>(KEYS.quizAttempts).map((r) => ({
+        userId: r.userId,
+        quizId: r.quizId,
+        score: r.score,
+        total: r.total,
+        passed: r.passed,
+        createdAt: r.createdAt,
+      })),
+      lessonFeedback: mine<LessonFeedback>(KEYS.lessonFeedback).map((r) => ({
+        userId: r.userId,
+        blockId: r.blockId,
+        rating: r.rating,
+        comment: r.comment,
+        createdAt: r.createdAt,
+      })),
+      projectSubmissions: mine<ProjectSubmission>(KEYS.projectSubmissions).map((r) => ({
+        userId: r.userId,
+        projectId: r.projectId,
+        repoUrl: r.repoUrl,
+        passed: r.passed,
+        checkedAt: r.checkedAt,
+      })),
+    };
   }
 
   private requireUser(): Profile {
