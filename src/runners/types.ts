@@ -30,6 +30,49 @@ export interface SqlOutput {
   empty: boolean;
 }
 
+/** One route of the learner's app, one entry per method. */
+export interface RouteInfo {
+  method: string;
+  path: string;
+}
+
+/** What the fastapi runner adds to a run: what the Requests panel shows. */
+export interface FastapiOutput {
+  /** The routes the learner wrote, in the order they were added. Empty when the app has none. */
+  routes: RouteInfo[];
+}
+
+/** One request from the Requests panel. `body` is JSON text, or '' for none. */
+export interface HttpRequest {
+  method: string;
+  path: string;
+  body: string;
+}
+
+/** What a request came back with, or why nothing did (fastapi runner). */
+export type HttpOutcome =
+  | {
+      kind: 'reply';
+      status: number;
+      reason: string;
+      contentType: string | null;
+      location: string | null;
+      /** The body as text, at most a fixed number of characters. */
+      body: string;
+      truncated: boolean;
+      ms: number;
+      /** What the app printed while answering, oldest first. */
+      logs: string[];
+      /** Plain words, with the file and line, when the handler raised: the reply is then a 500. */
+      error: string | null;
+    }
+  | {
+      kind: 'notice';
+      text: string;
+      /** True when the app is no longer loaded (it never ran, it was stopped, the worker died). */
+      appGone: boolean;
+    };
+
 export interface RunOutput {
   results: TestResult[];
   /** Index of the first failing test, or null when every test passed. */
@@ -40,6 +83,8 @@ export interface RunOutput {
   error?: string;
   /** sql runner only: what the Results panel shows. Absent when the code could not run. */
   sql?: SqlOutput;
+  /** fastapi runner only: what the Requests panel shows. Absent when the code could not run. */
+  fastapi?: FastapiOutput;
 }
 
 export interface Runner {

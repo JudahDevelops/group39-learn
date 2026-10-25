@@ -207,7 +207,7 @@ Write the message so it tells the learner what to fix, not what the test does ("
 | `web` | `js` | The body of an async function run in a hidden sandboxed iframe once the page has loaded (so `await` works). `document`, `window`, `code` (the learner's `index.html`, or every file joined when there is no HTML), `files` (every file's text, e.g. `files['styles.css']`) and chai's `assert` | `index.html`, `styles.css`, `script.js` |
 | `python` | `py` | Python run after the learner's `main.py`, in the same namespace. `_code`, `_stdout`, `_tree`, `has_function(name)`, `defines(name)`, `prints(text)`. A failed `assert` shows the test's message. See "Python tests" below | `main.py` |
 | `sql` | `js` | The body of an async function with `db` (`await db.query(sql, params?)` returns `{ rows, fields }`), `code` (the text of the learner's `query.sql`) and chai's `assert`. See "SQL tests" below | `query.sql`, plus `setup.sql` |
-| `fastapi` | `py` | Async Python with `client`, an `httpx.AsyncClient` bound to `app` | `main.py` |
+| `fastapi` | `py` | Async Python with `client`, an `httpx.AsyncClient` bound to `app`, plus `app`, `_code` (file name to text) and the helpers `has_function`, `defines`, `prints`. See "FastAPI tests" below | `main.py`, plus any other `.py` files |
 
 **`fetch` in the web runner.** Inside the preview and the test frame, `fetch("complaints.json")` (or `./complaints.json`, with or without a `?query`) answers from the learner's own files, as a static server would. The `Content-Type` comes from the extension, so `await response.json()` works. A file that is not in the project gets a 404 (`response.ok` is `false`). An absolute URL (`https://...`) goes to the real network. The answer arrives a few milliseconds later, so a test of code that fetches waits first:
 
@@ -216,7 +216,7 @@ await new Promise((resolve) => setTimeout(resolve, 50));
 assert.lengthOf(document.querySelectorAll('#complaints tbody tr'), 3);
 ```
 
-The fence language must match the runner (`js` for `web` and `sql`, `py` for `python` and `fastapi`). `js` tests are also syntax-checked at validation time. The `web`, `python` and `sql` runners are built. `fastapi` comes in a later work package and owns its exact globals.
+The fence language must match the runner (`js` for `web` and `sql`, `py` for `python` and `fastapi`). `js` tests are also syntax-checked at validation time. All four runners are built. The sections below describe each one's globals.
 
 ### Python tests
 
@@ -379,6 +379,122 @@ assert.equal(error.code, '23505');
 ````
 
 A `::: tryit sql` block shows a Run button and the Results panel and has no tests. The fixture `content/blocks/fixture-sql-workshop` (a workshop with a `setup.sql`), `fixture-sql-lab` (a lab whose seed has no editable region) and `fixture-sql-lesson` (a Try it and a `typein`) are working examples.
+
+### FastAPI tests
+
+The `fastapi` runner is Pyodide (Python 3.14) in a Web Worker with FastAPI 0.136.1, pydantic 2.12.5, httpx 0.28.1, SQLAlchemy 2.0.48 and bcrypt 5.0.0 from the Pyodide CDN, plus PyJWT 2.15.1 and python-multipart 0.0.32 from PyPI. The first run on a device downloads about 10.8 MB, once. The page says so before it starts. The right-hand pane is a **Requests** panel, a small Swagger: the learner picks a method (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`), types a path, adds a JSON body if the method takes one, presses **Send**, and reads the status code and the reply.
+
+**The files**
+
+| File | Who writes it | What it is |
+|---|---|---|
+| `main.py` | The learner | The entry. It must define `app`, usually `app = FastAPI()`. Without a `main.py` nothing runs |
+| other `.py` files | Either | Imported the normal way (`from models import Complaint`). Put them in the seed and the solutions. A folder works too (`routers/rooms.py`, imported as `routers.rooms`) |
+| other files (`.json`, `.txt`) | Either | Written beside the code, so the app can read them |
+
+All the files are written under `/app`, which is also the working folder. A lab with no editable region makes every file editable; with a region, the files without it are locked, as in any other runner. Put `main.py` first so it is the first tab.
+
+**How a check runs**
+
+1. `/app` is emptied, the learner's files are written, and every module imported from `/app` last time is forgotten. Then `app` is imported from `main.py`. This happens fresh on every Run and every Check, so a module-level list or counter always starts again, and a Run never changes what a Check sees.
+2. If the import raises (a syntax error, a `NameError`, a missing `app`, a module the runner does not have), the learner sees the error in plain words with the file and line (`Your code stopped on line 12 of main.py, which reads return totl.`), and **no test runs**. What the code printed while it loaded shows under the status line.
+3. The app starts: its `lifespan`, if it has one, runs its start-up half. Then every test runs in file order against **the same app**. Tests share what it keeps: a test that creates a room leaves it for the next test, as the sql runner's tests share their database. Each test gets its own `client`, so headers and cookies do not carry over.
+4. After the last test a second, clean copy of the app is loaded. That is the app the **Send** button talks to, so the learner never meets rows the tests added.
+5. The whole check (import, start-up and every test), every Run and every Send has 5 seconds. After that the worker is stopped, the learner reads "Your code ran for more than 5 seconds, so it was stopped. Check for a loop that never ends.", the app is gone ("Your app was stopped. Press Run to start it again."), and a fresh worker starts on the next Run. A restart takes several seconds.
+
+**Run and Send**
+
+| Button | What it does |
+|---|---|
+| Run | Loads the app and shows that it started ("Your app started with 3 routes.", with one button per route that fills the form) or the error from step 2. It runs no test and gives no XP |
+| Send | Sends one request to the loaded app and shows the status code on a plate, the reason, the time, and the body (JSON is shown with indentation). A handler that raises is a 500 whose reply names the file and line. A body that is not JSON is not sent. The panel keeps the last 10 requests, newest first, and a click on one fills the form again |
+
+Check also loads the app, so the panel shows the same status line after a Check. Send is off until an app has started.
+
+**What a test can use**
+
+A test is async Python. `await` works at its top level.
+
+| Name | What it is |
+|---|---|
+| `client` | `httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t")`. Use `await client.get("/rooms")`, `await client.post("/rooms", json={...})` and so on. The reply has `status_code`, `json()`, `text` and `headers` |
+| `app` | The app object from `main.py` |
+| `_code` | A dictionary: file name to the text of that file (`_code["main.py"]`). Every file the learner's editor holds is in it |
+| `_stdout` | Everything `main.py` and the files it imports printed while loading, as one string |
+| `has_function(name)` | True when any `.py` file has a `def` or `async def` called `name`, at any level. It reads the text |
+| `defines(name)` | True when `main.py` created a top-level name: a variable, function, class or import |
+| `prints(text)` | True when `text` appears in `_stdout`. `prints("")` is true only if something was printed |
+
+A test can also `import main`, `import models` (any file of the learner's) and `import httpx`, and use Python's standard library. There is no `_tree`; use `import ast` and `ast.parse(_code["main.py"])`.
+
+**What a result means**
+
+- A failed `assert` is the normal failure. The learner sees the test's message. `assert r.status_code == 200, "got " + str(r.status_code)` adds text for you, not the learner: it appears in `npm run verify:challenges` output.
+- Any other exception in a test is also a failure. The learner sees the test's message followed by what Python said in plain words, with the line of their own code if the error came from it. That includes a handler that raises: in a test it arrives as that exception, not as a 500 reply, because the test client does not hide it.
+- Tests share the app, so do not count on its data being as the seed left it. Compare before and after (`len(before) + 1`), or look for what you just added.
+- Order tests from structure to behaviour: first the status code, then the body, then the state, so the first message names the first thing missing.
+
+**What the runner does not have**
+
+| Missing | Why and what to do |
+|---|---|
+| Starlette's `TestClient` | It needs threads, which Pyodide does not have. Use `client` |
+| Threads | `def` handlers, `def` dependencies and form parsing work, because the runner runs in place what FastAPI would send to a thread pool. A handler that never returns stops everything, and the 5 second stop deals with it |
+| PostgreSQL | SQLAlchemy uses SQLite 3.39 in the browser. Say so plainly in the lesson. `sqlite://` keeps its data in memory. `sqlite:///./ihms.db` writes into `/app`, which is emptied on every Run and Check, so data never carries over. Make the tables when the module loads or in a `lifespan` |
+| `passlib`, `python-jose`, `pydantic-settings`, `email-validator`, `python-dotenv`, `alembic`, `sqlmodel`, `aiosmtplib`, `uvicorn` | Not in the runner. Importing one gives "The module "..." is not available here" with the list of what is. Use `bcrypt` and `jwt` (PyJWT) directly |
+| APScheduler | Never runs in the browser. Teach escalation with an injected `now` |
+
+`bcrypt.hashpw` at the default cost takes about 0.6 s in the browser, so a check that hashes several passwords can use up its 5 seconds. Use `bcrypt.gensalt(rounds=4)` in exercises.
+
+Checking a status code and a body:
+
+````markdown
+`GET /rooms/2` should return the room `A-102`.
+
+```py
+r = await client.get('/rooms/2')
+assert r.status_code == 200
+assert r.json()['number'] == 'A-102'
+```
+````
+
+Checking what a request changed, without counting on the starting data:
+
+````markdown
+A room that was added should appear in `GET /rooms`.
+
+```py
+before = len((await client.get('/rooms')).json())
+await client.post('/rooms', json={'number': 'C-303', 'beds': 4})
+after = len((await client.get('/rooms')).json())
+assert after == before + 1
+```
+````
+
+Checking that FastAPI refuses a body:
+
+````markdown
+A body with no `beds` should be refused with status 422.
+
+```py
+r = await client.post('/rooms', json={'number': 'C-304'})
+assert r.status_code == 422
+```
+````
+
+Checking a second file:
+
+````markdown
+`models.py` should define a pydantic model called `Complaint`.
+
+```py
+import models
+from pydantic import BaseModel
+assert issubclass(models.Complaint, BaseModel)
+```
+````
+
+A `::: tryit fastapi` block shows a Run button and the Requests panel and has no tests. The fixture `content/blocks/fixture-fastapi-workshop` (a workshop on a rooms API), `fixture-fastapi-lab` (a lab in two files) and `fixture-fastapi-lesson` (a Try it and a `typein`) are working examples.
 
 ## 6. Workshop step (`NN.md`)
 
@@ -1095,7 +1211,7 @@ Types for all of it are exported from `src/content/schema.ts`. The app reads it 
 | `::: tryit` block (concept screen or review) | Running the code raises no uncaught error and no syntax error. `console.log` and `console.error` calls are fine |
 | `python` | Runs in the real Python runner. The first check downloads Python (about 6 MB), so it takes longer. A `::: tryit python` block passes when `main.py` ends with no error inside 5 seconds. `print` is fine |
 | `sql` | Runs in the real SQL runner. The first check downloads PostgreSQL (about 5.3 MB), so it takes longer. A `::: tryit sql` block passes when `setup.sql` and `query.sql` run with no error inside 5 seconds. A statement that returns no rows is fine |
-| `fastapi` | Skipped until that runner is built |
+| `fastapi` | Runs in the real FastAPI runner. The first check downloads the runner (about 10.8 MB), so it takes longer. A `::: tryit fastapi` block passes when `main.py` loads and the app starts with no error inside 5 seconds. Nothing is sent to it |
 
 It needs Chromium. Locally, set `PW_CHROMIUM_PATH` to a Chromium or `chrome-headless-shell` binary (see `docs/style-guide.md`). CI installs its own. A run builds its harness into `.verify-dist/` (git-ignored, removed afterwards) and never writes `public/content/`.
 
@@ -1111,7 +1227,6 @@ One line per problem, then a summary: `16 checked, 0 failed, 0 skipped`. A "chec
 | `content/blocks/x/lesson.md: screen 6 (typein): ...` | The same checks on a lesson screen. Screens count from 1 |
 | `content/blocks/x/review.md: try it 2: running the code raises an uncaught error: <error>` | The code in the second try-it block throws. A lesson names it `screen N (try it)` |
 | `content/blocks/x/review.md: try it 2: running the code fails: <reason>` | The code has a syntax error or a loop that never ends |
-| `skipped: fastapi runner not built yet (content/blocks/x/03.md)` | Not checked yet. Not an error, unless you pass `--strict` |
 | `... the web runner could not start: ...` or `... the check could not run: ...` | The checking tool broke, not your content. Run it again, then report it |
 
 Exit code 0 means every check passed. 1 means a challenge is broken, the content does not validate, or `--strict` met a skipped check. 2 means the command could not run (unknown option, no such block, no browser).

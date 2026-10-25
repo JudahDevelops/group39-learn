@@ -14,6 +14,7 @@ import {
   type EditorFile,
 } from '../../editor/files';
 import { getRunner } from '../../runners';
+import { viewOf as appViewOf, type AppView } from '../../runners/fastapi/view';
 import { runPassed } from '../../runners/outcome';
 import { lockOwnSetup, withOwnSetup } from '../../runners/sql/files';
 import type { ConsoleOutput } from '../../runners/python/Console';
@@ -56,7 +57,7 @@ export interface CodeSession {
   getEditableCode(): string;
   check(): Promise<void>;
   checking: boolean;
-  /** Python and SQL only: runs the code with no tests and shows the output (what it prints, or the rows). */
+  /** Python, SQL and FastAPI only: runs the code with no tests and shows the output (what it prints, the rows, or that the app started). */
   run(): Promise<void>;
   /** True while a check or a run is in progress. */
   busy: boolean;
@@ -64,6 +65,8 @@ export interface CodeSession {
   console: ConsoleOutput | null;
   /** SQL only: the rows (or the error) of the last run or check. Null before the first. */
   results: ResultsView | null;
+  /** FastAPI only: whether the app started, and its routes, after the last run or check. Null before the first. */
+  app: AppView | null;
   outcome: Outcome | null;
   /** True when the code was edited after the last check. */
   stale: boolean;
@@ -89,6 +92,7 @@ export function useCodeSession({ itemId, runner, seed, tests, onPass }: Options)
   const [runBusy, setRunBusy] = useState(false);
   const [consoleOut, setConsoleOut] = useState<ConsoleOutput | null>(null);
   const [resultsOut, setResultsOut] = useState<ResultsView | null>(null);
+  const [appOut, setAppOut] = useState<AppView | null>(null);
 
   const latest = useRef<EditorSnapshot>({ files: {}, editableCode: '' });
   const dirty = useRef(false);
@@ -187,6 +191,7 @@ export function useCodeSession({ itemId, runner, seed, tests, onPass }: Options)
     setOutcome({ output, passed });
     if (runner === 'python') setConsoleOut({ lines: output.logs, error: output.error ?? null });
     if (runner === 'sql') setResultsOut(viewOf(output));
+    if (runner === 'fastapi') setAppOut(appViewOf(output));
     setStale(false);
     setChecking(false);
     running.current = false;
@@ -207,7 +212,9 @@ export function useCodeSession({ itemId, runner, seed, tests, onPass }: Options)
   }, [store, itemId, runner, seed, tests, refreshPreview]);
 
   const run = useCallback(async () => {
-    if ((runner !== 'python' && runner !== 'sql') || running.current) return;
+    if ((runner !== 'python' && runner !== 'sql' && runner !== 'fastapi') || running.current) {
+      return;
+    }
     running.current = true;
     setRunBusy(true);
     // Save first, as a check does: the code may never come back.
@@ -225,6 +232,7 @@ export function useCodeSession({ itemId, runner, seed, tests, onPass }: Options)
       };
     }
     if (runner === 'sql') setResultsOut(viewOf(output));
+    else if (runner === 'fastapi') setAppOut(appViewOf(output));
     else setConsoleOut({ lines: output.logs, error: output.error ?? null });
     setRunBusy(false);
     running.current = false;
@@ -247,6 +255,7 @@ export function useCodeSession({ itemId, runner, seed, tests, onPass }: Options)
     setOutcome(null);
     setConsoleOut(null);
     setResultsOut(null);
+    setAppOut(null);
     setStale(false);
   }, [store, itemId, seed, runner]);
 
@@ -268,6 +277,7 @@ export function useCodeSession({ itemId, runner, seed, tests, onPass }: Options)
       busy: checking || runBusy,
       console: consoleOut,
       results: resultsOut,
+      app: appOut,
       outcome,
       stale,
       reset,
@@ -286,6 +296,7 @@ export function useCodeSession({ itemId, runner, seed, tests, onPass }: Options)
       runBusy,
       consoleOut,
       resultsOut,
+      appOut,
       outcome,
       stale,
       reset,

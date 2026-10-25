@@ -1,0 +1,9 @@
+{
+  "id": "k2pyq1ct",
+  "slug": "fixture-fastapi-lab",
+  "type": "lab",
+  "title": "Build a Complaints API",
+  "runner": "fastapi",
+  "estMinutes": 8,
+  "demo": "main.py"
+}

@@ -1,0 +1,384 @@
+/* Requests panel, note and Try it box for the fastapi runner. Colours follow docs/design.md: the
+   panel is the dark bench surface, colour carries state only (green worked, red to fix), and a
+   problem is a correction slip (biro rule on a light wash). The status code sits on a plate, like
+   a room number, and is the one thing on the panel that is meant to be seen first. Mono is for
+   paths, bodies and the lines the app printed, and nothing else. */
+
+.fa-panel {
+  --fa-surface: var(--bench);
+  --fa-raised: var(--bench-2);
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: var(--fa-surface);
+  color: var(--bench-ink);
+}
+
+.fa-panel :focus-visible {
+  outline-color: var(--key);
+}
+
+/* The panel scrolls as a whole. Without this, its own scrolling children (the route list, the reply
+   body) would shrink to fit the pane instead, and the routes would vanish. */
+.fa-panel > * {
+  flex: 0 0 auto;
+}
+
+.fa-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* What the last Run found ---------------------------------------------------- */
+
+.fa-band {
+  margin: 0;
+  font-size: var(--text-ui);
+  line-height: var(--lh-ui);
+}
+
+.fa-band-ok {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.fa-band-stop {
+  padding-left: var(--space-3);
+  border-left: 3px solid var(--key);
+}
+
+.fa-error,
+.fa-problem {
+  margin: 0;
+  max-width: 62ch;
+  padding: var(--space-3) var(--space-4);
+  background: var(--biro-wash);
+  border-left: 3px solid var(--biro);
+  border-radius: var(--radius-door);
+  color: var(--ink);
+  font-size: var(--text-ui);
+  line-height: var(--lh-ui);
+  overflow-wrap: anywhere;
+}
+
+.fa-problem {
+  margin-top: var(--space-2);
+}
+
+.fa-reason {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--ink-2);
+}
+
+.fa-routes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  max-height: 8rem;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.fa-route,
+.fa-history-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--ink-2);
+  border-radius: var(--radius-control);
+  background: var(--fa-raised);
+  color: var(--bench-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.fa-route:hover,
+.fa-history-item:hover {
+  border-color: var(--bench-ink);
+}
+
+.fa-route-method {
+  font-weight: 700;
+}
+
+.fa-route-path {
+  font-family: var(--font-code);
+  font-size: var(--text-code);
+  line-height: var(--lh-code);
+  overflow-wrap: anywhere;
+}
+
+/* The request ----------------------------------------------------------------- */
+
+.fa-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.fa-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.fa-method,
+.fa-path,
+.fa-body {
+  min-height: var(--touch);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--ink-2);
+  border-radius: var(--radius-control);
+  background: var(--fa-raised);
+  color: var(--bench-ink);
+}
+
+.fa-method {
+  flex: 0 0 auto;
+  font: inherit;
+  font-weight: 700;
+}
+
+.fa-path,
+.fa-body {
+  font-family: var(--font-code);
+  font-size: var(--text-code);
+  line-height: var(--lh-code);
+}
+
+.fa-path {
+  flex: 1 1 6rem;
+  min-width: 0;
+}
+
+.fa-body {
+  width: 100%;
+  min-height: 6rem;
+  padding: var(--space-3);
+  resize: vertical;
+}
+
+.fa-body[aria-invalid='true'] {
+  border-color: var(--biro-wash);
+}
+
+.fa-send {
+  flex: 0 0 auto;
+}
+
+.fa-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.fa-small {
+  margin: 0;
+  font-size: var(--text-meta);
+  line-height: var(--lh-meta);
+}
+
+.fa-quiet {
+  margin: 0;
+  font-size: var(--text-meta);
+  line-height: var(--lh-meta);
+  opacity: 0.85;
+}
+
+/* The reply --------------------------------------------------------------------- */
+
+.fa-answer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.fa-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.fa-plate {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 2px var(--space-3) 2px var(--space-2);
+  border-left: 4px solid var(--ink-2);
+  border-radius: var(--radius-door);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: var(--text-question);
+  line-height: var(--lh-meta);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.fa-plate-ok {
+  border-left-color: var(--door);
+}
+
+.fa-plate-ok .icon {
+  color: var(--door);
+}
+
+.fa-plate-error {
+  border-left-color: var(--biro);
+}
+
+.fa-plate-error .icon {
+  color: var(--biro);
+}
+
+.fa-plate-small {
+  padding: 0 var(--space-2) 0 var(--space-1);
+  border-left-width: 3px;
+  font-size: var(--text-ui);
+  font-weight: 700;
+}
+
+.fa-status-text {
+  font-weight: 600;
+}
+
+.fa-ms {
+  margin-left: auto;
+  font-size: var(--text-meta);
+  line-height: var(--lh-meta);
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+
+.fa-pre {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  max-height: 22rem;
+  overflow: auto;
+  background: var(--fa-raised);
+  border-radius: var(--radius-door);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.fa-printed {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+/* History ----------------------------------------------------------------------- */
+
+.fa-heading {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-ui);
+  line-height: var(--lh-ui);
+  font-weight: 700;
+}
+
+.fa-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fa-history-item {
+  width: 100%;
+  border-color: transparent;
+}
+
+.fa-history-item .fa-plate {
+  margin-left: auto;
+}
+
+/* The note about the runner's size and loading. */
+.fa-notice {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--text-meta);
+  line-height: var(--lh-meta);
+}
+
+.wk-output .fa-notice {
+  color: var(--bench-ink);
+}
+
+/* The workshop pane: the note sits under the tabs, the panel fills the rest. */
+.wk-fa {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.wk-fa-note:not(:empty) {
+  flex: 0 0 auto;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--bench-2);
+}
+
+.wk-actions .fa-notice {
+  flex: 1 1 100%;
+}
+
+/* Above a lesson's bottom bar, for the typein screen. */
+.fa-floating {
+  position: fixed;
+  left: 50%;
+  bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+  z-index: 4;
+  width: min(560px, calc(100% - 2 * var(--space-4)));
+  transform: translateX(-50%);
+}
+
+.fa-floating .fa-notice:not(:empty) {
+  padding: var(--space-3) var(--space-4);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--key);
+  border-radius: var(--radius-door);
+  color: var(--ink);
+  font-size: var(--text-ui);
+  line-height: var(--lh-ui);
+}
+
+/* A Try it box: the panel sits under the Run button, in a panel of its own height. */
+.tryit .fa-panel {
+  --fa-surface: var(--bench-2);
+  --fa-raised: var(--bench);
+  flex: 0 0 auto;
+  max-height: 34rem;
+  border-radius: var(--radius-door);
+}
+
+.tryit .fa-notice {
+  color: var(--ink-2);
+}
+
+@media (max-width: 767px) {
+  .fa-route,
+  .fa-history-item {
+    min-height: var(--touch);
+  }
+}

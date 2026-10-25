@@ -1,11 +1,14 @@
 /**
  * "Try it": a small playground in a lesson or review. Everything is editable, Run shows the
- * result. Web code renders in a sandboxed preview, Python code prints to a console and SQL code
- * shows its rows in a Results panel; the other runners arrive in later updates, so their code is
- * shown read-only for now.
+ * result. Web code renders in a sandboxed preview, Python code prints to a console, SQL code shows
+ * its rows in a Results panel and FastAPI code starts an app that the Requests panel talks to.
  */
 import { useEffect, useMemo, useState } from 'react';
 import type { Tryit as TryitData } from '../content/schema';
+import { FastapiNotice } from '../runners/fastapi/Notice';
+import { RequestsPanel } from '../runners/fastapi/Requests';
+import { useFastapiRun } from '../runners/fastapi/useRun';
+import { warmIfCached as warmFastapiIfCached } from '../runners/fastapi/warm';
 import { PythonConsole } from '../runners/python/Console';
 import { PythonNotice } from '../runners/python/Notice';
 import { usePythonRun } from '../runners/python/useRun';
@@ -28,14 +31,7 @@ export function Tryit({ tryit }: { tryit: TryitData }) {
 
   if (tryit.runner === 'python') return <PythonTryit initial={initial} />;
   if (tryit.runner === 'sql') return <SqlTryit initial={initial} own={tryit.files} />;
-  if (tryit.runner !== 'web') {
-    return (
-      <div className="tryit">
-        <CodeEditor files={initial} readOnly height="auto" ariaLabel="Example code" />
-        <p className="tryit-note">Running this code arrives in a later update.</p>
-      </div>
-    );
-  }
+  if (tryit.runner === 'fastapi') return <FastapiTryit initial={initial} />;
   return <WebTryit initial={initial} />;
 }
 
@@ -101,6 +97,36 @@ function SqlTryit({
       </div>
       <SqlNotice />
       <SqlResults view={sql.view} running={sql.running} />
+    </div>
+  );
+}
+
+function FastapiTryit({ initial }: { initial: ReturnType<typeof freeEditorFiles> }) {
+  const [current, setCurrent] = useState(() => filesToRecord(initial));
+  const app = useFastapiRun();
+  useEffect(() => warmFastapiIfCached(), []);
+
+  function run() {
+    void app.run(current);
+  }
+
+  return (
+    <div className="tryit">
+      <CodeEditor
+        files={initial}
+        height="auto"
+        ariaLabel="Try it code"
+        onChange={(snapshot) => setCurrent(snapshot.files)}
+        onCheck={run}
+      />
+      <div className="tryit-actions">
+        <button type="button" className="btn btn-primary" onClick={run} disabled={app.running}>
+          Run
+        </button>
+        <span className="tryit-hint">Ctrl+Enter</span>
+      </div>
+      <FastapiNotice />
+      <RequestsPanel view={app.view} running={app.running} />
     </div>
   );
 }

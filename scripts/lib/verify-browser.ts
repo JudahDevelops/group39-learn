@@ -25,9 +25,10 @@ const ORIGIN = 'http://g39-verify.test';
 const WATCHDOG_MS = 30_000;
 
 /**
- * The python runner has one worker, so checks wait in a queue. A call can sit behind Python's first
- * download (cold, 6 MB) and behind runs that were stopped at 5 s, each followed by a 4 to 6 s restart.
- * That is slow, not stuck, so a python call gets this much longer before the page is declared dead.
+ * The python and fastapi runners have one worker each, so checks wait in a queue. A call can sit
+ * behind the first download (cold: 6 MB for Python, 10.8 MB for FastAPI) and behind runs that were
+ * stopped at 5 s, each followed by a 4 to 10 s restart. That is slow, not stuck, so a call for
+ * either gets this much longer before the page is declared dead.
  */
 const PYTHON_ALLOWANCE_MS = 120_000;
 
@@ -115,7 +116,9 @@ export async function openHarness(): Promise<Harness> {
         { name: HARNESS_GLOBAL, args: [runner, files, tests, timeoutMs] },
       );
       const limitMs =
-        WATCHDOG_MS + (timeoutMs ?? 0) + (runner === 'python' ? PYTHON_ALLOWANCE_MS : 0);
+        WATCHDOG_MS +
+        (timeoutMs ?? 0) +
+        (runner === 'python' || runner === 'fastapi' ? PYTHON_ALLOWANCE_MS : 0);
       let timer: ReturnType<typeof setTimeout> | undefined;
       const watchdog = new Promise<never>((_, reject) => {
         timer = setTimeout(

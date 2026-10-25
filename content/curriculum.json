@@ -202,6 +202,15 @@
             "fixture-sql-workshop",
             "fixture-sql-lab"
           ]
+        },
+        {
+          "id": "Z5",
+          "title": "FastAPI runner",
+          "blocks": [
+            "fixture-fastapi-lesson",
+            "fixture-fastapi-workshop",
+            "fixture-fastapi-lab"
+          ]
         }
       ]
     }

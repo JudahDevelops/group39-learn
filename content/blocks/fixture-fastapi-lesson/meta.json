@@ -1,0 +1,8 @@
+{
+  "id": "vmq6wn58",
+  "slug": "fixture-fastapi-lesson",
+  "type": "lesson",
+  "title": "Run your first FastAPI app",
+  "runner": "fastapi",
+  "estMinutes": 5
+}

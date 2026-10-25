@@ -5,16 +5,16 @@
  *   run(files, tests) -> worker writes the files, runs main.py, runs each test on a fresh namespace
  *   -> { results, firstFailure, logs, error? }
  *
- * A run that lasts longer than the timeout terminates the worker. Nothing else can stop a loop that
- * never ends, because Python holds the worker's only thread. The next run starts a fresh worker
- * ("Restarting Python", 4 to 6 s). Runs go one at a time through a queue, since one worker answers
- * one request at a time; the timeout counts only from the moment a run reaches the worker, never
- * the time spent downloading Python or waiting behind another run.
+ * The worker, the queue, the boot status and the 5 s stop are shared with the fastapi runner
+ * (../pyodide/session.ts). A run that lasts longer than the timeout terminates the worker; the next
+ * run starts a fresh one ("Restarting Python", 4 to 6 s).
  *
  * The worker and the Python harness are plain text imported with `?raw`, and the worker starts from
  * a Blob, so no bundler setting decides whether it is a module worker.
  */
 import type { TestCase } from '../../content/schema';
+import { blobWorkerHost } from '../pyodide/host';
+import { createSession, isRecord, type WorkerHost, type WorkerLike } from '../pyodide/session';
 import type { Files, RunOutput, Runner, TestResult } from '../types';
 import { BOOT_TIMEOUT_MS, PYODIDE_INDEX_URL, RUN_TIMEOUT_MS } from './config';
 import harnessSource from './harness.py?raw';
@@ -28,41 +28,8 @@ import {
   type PyError,
 } from './messages';
 import { pythonStatus, type StatusStore } from './status';
-import workerSource from './worker.js?raw';
 
-// ---------------------------------------------------------------------------
-// The worker, behind a small interface so tests can stand in for it
-
-export interface WorkerLike {
-  postMessage(message: unknown): void;
-  terminate(): void;
-  onmessage: ((event: { data: unknown }) => void) | null;
-  onerror: ((event: unknown) => void) | null;
-}
-
-export interface WorkerHost {
-  create(): WorkerLike;
-}
-
-/** The real thing: a module worker started from the worker source as a Blob. */
-export const blobWorkerHost: WorkerHost = {
-  create() {
-    const url = URL.createObjectURL(new Blob([workerSource], { type: 'text/javascript' }));
-    const worker = new Worker(url, { type: 'module' });
-    const adapter: WorkerLike = {
-      postMessage: (message) => worker.postMessage(message),
-      terminate() {
-        worker.terminate();
-        URL.revokeObjectURL(url);
-      },
-      onmessage: null,
-      onerror: null,
-    };
-    worker.onmessage = (event: MessageEvent) => adapter.onmessage?.({ data: event.data });
-    worker.onerror = (event) => adapter.onerror?.(event);
-    return adapter;
-  },
-};
+export type { WorkerHost, WorkerLike };
 
 // ---------------------------------------------------------------------------
 // Messages
@@ -70,32 +37,6 @@ export const blobWorkerHost: WorkerHost = {
 interface HarnessResult {
   error: PyError | null;
   results: { ok: boolean; detail: string | null; error: PyError | null }[];
-}
-
-type Stage = 'download' | 'start' | 'prepare';
-
-interface Hooks {
-  onOut?(text: string): void;
-  onStage?(stage: Stage): void;
-}
-
-interface Call extends Hooks {
-  resolve(value: unknown): void;
-  reject(error: Error): void;
-}
-
-interface Handle {
-  worker: WorkerLike;
-  nextId: number;
-  calls: Map<number, Call>;
-  dead: boolean;
-}
-
-/** An error whose message is already the sentence the learner should read. */
-class PlainError extends Error {}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
 }
 
 /** Stops showing run output after this many lines, so a print loop cannot fill the page. */
@@ -139,176 +80,51 @@ export interface PythonRunnerOptions {
 }
 
 export function createPythonRunner(options: PythonRunnerOptions = {}): PythonRunner {
-  const host = options.host ?? blobWorkerHost;
-  const status = options.status ?? pythonStatus;
-  const bootTimeoutMs = options.bootTimeoutMs ?? BOOT_TIMEOUT_MS;
+  const session = createSession({
+    host: options.host ?? blobWorkerHost,
+    status: options.status ?? pythonStatus,
+    bootTimeoutMs: options.bootTimeoutMs ?? BOOT_TIMEOUT_MS,
+    initMessage: () => ({ indexURL: PYODIDE_INDEX_URL, harness: harnessSource }),
+    bootFailedText: BOOT_FAILED_TEXT,
+    bootTimeoutText: BOOT_TIMEOUT_TEXT,
+    workerCrashedText: WORKER_CRASHED_TEXT,
+  });
 
-  let handle: Handle | null = null;
-  let booting: Promise<Handle> | null = null;
-  /** True after a worker was stopped: the next start is a restart, not a first start. */
-  let replaced = false;
-  let queue: Promise<unknown> = Promise.resolve();
-
-  function dispatch(h: Handle, data: unknown) {
-    if (!isRecord(data) || typeof data.id !== 'number') return;
-    const call = h.calls.get(data.id);
-    if (!call) return;
-    if (data.type === 'out' && typeof data.text === 'string') call.onOut?.(data.text);
-    else if (data.type === 'stage') call.onStage?.(data.stage as Stage);
-    else if (data.type === 'done') {
-      h.calls.delete(data.id);
-      call.resolve(data.result);
-    } else if (data.type === 'fail') {
-      h.calls.delete(data.id);
-      call.reject(new Error(String(data.error)));
-    }
-  }
-
-  /** Terminates the worker and fails every request still waiting on it. */
-  function kill(h: Handle, reason: string) {
-    if (h.dead) return;
-    h.dead = true;
-    h.worker.terminate();
-    if (handle === h) handle = null;
-    const pending = [...h.calls.values()];
-    h.calls.clear();
-    for (const call of pending) call.reject(new PlainError(reason));
-  }
-
-  function request<T>(h: Handle, build: (id: number) => object, hooks: Hooks = {}): Promise<T> {
-    const promise = new Promise<T>((resolve, reject) => {
-      const id = h.nextId++;
-      h.calls.set(id, { ...hooks, resolve: resolve as (value: unknown) => void, reject });
-      h.worker.postMessage(build(id));
-    });
-    // The caller may stop waiting (a timeout) before this settles; that must not be an unhandled rejection.
-    promise.catch(() => undefined);
-    return promise;
-  }
-
-  async function start(restarting: boolean): Promise<Handle> {
-    const worker = host.create();
-    const h: Handle = { worker, nextId: 1, calls: new Map(), dead: false };
-    worker.onmessage = (event) => dispatch(h, event.data);
-    worker.onerror = () => kill(h, BOOT_FAILED_TEXT);
-    status.set(restarting ? 'restarting' : status.get().firstTime ? 'downloading' : 'starting');
-    const timer = setTimeout(() => kill(h, BOOT_TIMEOUT_TEXT), bootTimeoutMs);
-    try {
-      await request(
-        h,
-        (id) => ({ id, type: 'init', indexURL: PYODIDE_INDEX_URL, harness: harnessSource }),
-        {
-          onStage(stage) {
-            if (stage !== 'download' && status.get().phase === 'downloading') {
-              status.set('starting');
-            }
-          },
-        },
-      );
-    } catch (error) {
-      clearTimeout(timer);
-      kill(h, BOOT_FAILED_TEXT);
-      status.set('idle');
-      throw error instanceof PlainError ? error : new PlainError(BOOT_FAILED_TEXT);
-    }
-    clearTimeout(timer);
-    if (h.dead) {
-      status.set('idle');
-      throw new PlainError(BOOT_FAILED_TEXT);
-    }
-    worker.onerror = () => {
-      kill(h, WORKER_CRASHED_TEXT);
-      replaced = true;
-      status.set('idle');
-    };
-    handle = h;
-    status.markLoaded();
-    status.set('ready');
-    return h;
-  }
-
-  function ensure(): Promise<Handle> {
-    if (handle && !handle.dead) return Promise.resolve(handle);
-    booting ??= start(replaced)
-      .then((h) => {
-        replaced = false;
-        return h;
-      })
-      .finally(() => {
-        booting = null;
-      });
-    return booting;
-  }
-
-  async function execute(files: Files, tests: TestCase[], timeoutMs: number): Promise<RunOutput> {
-    let h: Handle;
-    try {
-      h = await ensure();
-    } catch (error) {
-      return failure(error instanceof Error ? error.message : BOOT_FAILED_TEXT);
-    }
-
-    status.set('running');
+  function execute(files: Files, tests: TestCase[], timeoutMs: number): Promise<RunOutput> {
     const logs: string[] = [];
-    const call = request<HarnessResult>(
-      h,
-      (id) => ({ id, type: 'run', payload: { files, tests: tests.map((t) => t.code) } }),
-      {
-        onOut(text) {
-          if (logs.length < MAX_LOG_LINES) logs.push(text);
-          else if (logs.length === MAX_LOG_LINES) logs.push('[More output was not shown.]');
-        },
+    return session.execute<RunOutput>({
+      timeoutMs,
+      work: async (h) => {
+        const outcome = await session.request<HarnessResult>(
+          h,
+          (id) => ({ id, type: 'run', payload: { files, tests: tests.map((t) => t.code) } }),
+          {
+            onOut(text) {
+              if (logs.length < MAX_LOG_LINES) logs.push(text);
+              else if (logs.length === MAX_LOG_LINES) logs.push('[More output was not shown.]');
+            },
+          },
+        );
+        if (!isRecord(outcome) || !Array.isArray((outcome as Partial<HarnessResult>).results)) {
+          return failure('Python did not return a result. Try again.', logs);
+        }
+        return toRunOutput(outcome, tests, logs);
       },
-    );
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const stop = new Promise<'timeout'>((resolve) => {
-      timer = setTimeout(() => resolve('timeout'), timeoutMs);
+      unavailable: (message) => failure(message),
+      stopped: () => failure(timeoutText(timeoutMs), logs),
+      lost: (message) => failure(message, logs),
+      failed: (detail) =>
+        failure(`Python could not check your code${detail ? `: ${detail}` : ''}. Try again.`, logs),
     });
-    try {
-      const outcome = await Promise.race([call, stop]);
-      if (outcome === 'timeout') {
-        kill(h, timeoutText(timeoutMs));
-        replaced = true;
-        status.set('idle');
-        return failure(timeoutText(timeoutMs), logs);
-      }
-      status.set('ready');
-      if (!isRecord(outcome) || !Array.isArray((outcome as Partial<HarnessResult>).results)) {
-        return failure('Python did not return a result. Try again.', logs);
-      }
-      return toRunOutput(outcome, tests, logs);
-    } catch (error) {
-      if (h.dead) {
-        replaced = true;
-        status.set('idle');
-        return failure(error instanceof Error ? error.message : WORKER_CRASHED_TEXT, logs);
-      }
-      status.set('ready');
-      const detail = error instanceof Error ? error.message.trim().split('\n').pop() : '';
-      return failure(
-        `Python could not check your code${detail ? `: ${detail}` : ''}. Try again.`,
-        logs,
-      );
-    } finally {
-      clearTimeout(timer);
-    }
   }
 
   return {
     run(files, tests, runOptions) {
       const timeoutMs = runOptions?.timeoutMs ?? RUN_TIMEOUT_MS;
-      const job = queue.then(() => execute(files, tests, timeoutMs));
-      queue = job.catch(() => undefined);
-      return job;
+      return session.enqueue(() => execute(files, tests, timeoutMs));
     },
-    warm() {
-      ensure().catch(() => undefined);
-    },
-    dispose() {
-      if (handle) kill(handle, WORKER_CRASHED_TEXT);
-      replaced = false;
-      status.set('idle');
-    },
+    warm: () => session.warm(),
+    dispose: () => session.dispose(),
   };
 }
 

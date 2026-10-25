@@ -5,6 +5,7 @@
  * `RunOutput.error` is plain text (not HTML), so nothing here uses backticks or markup. Names are
  * wrapped in straight double quotes.
  */
+import type { Phase, RuntimeStatus } from '../pyodide/status';
 import { PYTHON_DOWNLOAD_MB, RUN_TIMEOUT_MS } from './config';
 
 /** What harness.py reports about an exception. `file`, `line` and `source` point into the learner's files. */
@@ -201,13 +202,10 @@ export function failureMessage(hint: string, error: PyError | null): string {
 // ---------------------------------------------------------------------------
 // The note beside the Run button
 
-export type PythonPhase = 'idle' | 'downloading' | 'starting' | 'ready' | 'running' | 'restarting';
+export type PythonPhase = Phase;
 
-export interface PythonStatus {
-  phase: PythonPhase;
-  /** True until Python has loaded once on this device. */
-  firstTime: boolean;
-}
+/** `firstTime` is true until Python has loaded once on this device. */
+export type PythonStatus = RuntimeStatus;
 
 /** What to tell the learner about Python itself, or null when there is nothing to say. */
 export function statusText(status: PythonStatus): string | null {

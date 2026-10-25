@@ -1,6 +1,9 @@
 import type { CodeRunner, SeedFile } from '../../content/schema';
 import { CodeEditor } from '../../editor/CodeEditor';
 import { freeEditorFiles } from '../../editor/files';
+import { FastapiNotice } from '../../runners/fastapi/Notice';
+import { RequestsPanel } from '../../runners/fastapi/Requests';
+import { useFastapiRun } from '../../runners/fastapi/useRun';
 import { PythonConsole } from '../../runners/python/Console';
 import { PythonNotice } from '../../runners/python/Notice';
 import { usePythonRun } from '../../runners/python/useRun';
@@ -20,7 +23,7 @@ interface DemoModalProps {
   onClose: () => void;
 }
 
-/** The finished project, rendered from the solutions. Web, Python and SQL code run; other code is shown read-only. */
+/** The finished project, rendered from the solutions. Web, Python, SQL and FastAPI code run. */
 export function DemoModal({ title, runner, files, entry, onClose }: DemoModalProps) {
   const record = Object.fromEntries(files.map((f) => [f.name, f.contents]));
   return (
@@ -34,15 +37,7 @@ export function DemoModal({ title, runner, files, entry, onClose }: DemoModalPro
       ) : runner === 'sql' ? (
         <SqlDemo files={files} record={record} />
       ) : (
-        <>
-          <CodeEditor
-            files={freeEditorFiles(files)}
-            readOnly
-            height="auto"
-            ariaLabel="Finished project code"
-          />
-          <p className="wk-output-note">Running this code arrives in a later update.</p>
-        </>
+        <FastapiDemo files={files} record={record} />
       )}
     </Modal>
   );
@@ -96,6 +91,32 @@ function SqlDemo({ files, record }: { files: SeedFile[]; record: Record<string, 
       </div>
       <SqlResults view={sql.view} running={sql.running} />
       <SqlNotice />
+    </div>
+  );
+}
+
+function FastapiDemo({ files, record }: { files: SeedFile[]; record: Record<string, string> }) {
+  const app = useFastapiRun();
+  return (
+    <div className="tryit">
+      <CodeEditor
+        files={freeEditorFiles(files)}
+        readOnly
+        height="auto"
+        ariaLabel="Finished project code"
+      />
+      <div className="tryit-actions">
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => void app.run(record)}
+          disabled={app.running}
+        >
+          Run
+        </button>
+      </div>
+      <RequestsPanel view={app.view} running={app.running} />
+      <FastapiNotice />
     </div>
   );
 }

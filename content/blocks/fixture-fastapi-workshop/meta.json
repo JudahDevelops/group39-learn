@@ -1,0 +1,8 @@
+{
+  "id": "7agctzb8",
+  "slug": "fixture-fastapi-workshop",
+  "type": "workshop",
+  "title": "Build a Rooms API",
+  "runner": "fastapi",
+  "estMinutes": 8
+}
