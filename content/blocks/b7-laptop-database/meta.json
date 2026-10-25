@@ -1,0 +1,9 @@
+{
+  "id": "fe7g8gp0",
+  "slug": "b7-laptop-database",
+  "type": "lesson",
+  "title": "Set Up the IHMS Database on Your Laptop",
+  "runner": "sql",
+  "estMinutes": 20,
+  "sourceRef": "course-content.md:3480-3533,4804-4875"
+}

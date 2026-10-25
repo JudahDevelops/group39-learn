@@ -1,0 +1,10 @@
+{
+  "id": "49lbtp21",
+  "slug": "b7-warden-reports",
+  "type": "lab",
+  "title": "Write the Warden Report Queries",
+  "runner": "sql",
+  "estMinutes": 45,
+  "sourceRef": "course-content.md:3581-3658,4804-4885",
+  "demo": "query.sql"
+}

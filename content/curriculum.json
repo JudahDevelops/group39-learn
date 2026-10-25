@@ -157,7 +157,12 @@
             "b7-reading-writing-data",
             "b7-joins-and-reports",
             "b7-constraints",
-            "b7-library-database"
+            "b7-library-database",
+            "b7-ihms-database",
+            "b7-warden-reports",
+            "b7-laptop-database",
+            "b7-sql-review",
+            "b7-sql-quiz"
           ]
         }
       ]

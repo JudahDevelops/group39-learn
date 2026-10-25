@@ -1,0 +1,10 @@
+{
+  "id": "oa0999sv",
+  "slug": "b7-ihms-database",
+  "type": "workshop",
+  "title": "Create the IHMS Database",
+  "runner": "sql",
+  "estMinutes": 60,
+  "sourceRef": "course-content.md:3480-3533,3661-3704,4804-4885",
+  "demo": "query.sql"
+}

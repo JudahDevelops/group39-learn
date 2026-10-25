@@ -1,0 +1,9 @@
+{
+  "id": "86m1nmcm",
+  "slug": "b7-sql-quiz",
+  "type": "quiz",
+  "title": "SQL quiz",
+  "runner": "none",
+  "estMinutes": 12,
+  "sourceRef": "course-content.md:3428-3706,4804-4885"
+}
