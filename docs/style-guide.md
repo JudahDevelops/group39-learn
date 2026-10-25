@@ -39,6 +39,8 @@ Intelligent Hostel Management System (IHMS) for their group project and must def
 - Python e2e tests download Pyodide (about 6 MB) on first run. If they time out while another agent's e2e run is
   going, rerun them once before reporting a failure.
 - No git push, no remote writes, no secrets in files.
+- List a new block in `content/curriculum.json` as soon as you create its folder, before writing its files. The dev
+  server rebuilds content on start and refuses to start while any block folder is unlisted.
 
 ## Recurring corrections
 (Added by the reviewer as agents make mistakes. Read before starting.)
