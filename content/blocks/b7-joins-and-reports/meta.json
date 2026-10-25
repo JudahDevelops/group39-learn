@@ -1,0 +1,9 @@
+{
+  "id": "0y0o443j",
+  "slug": "b7-joins-and-reports",
+  "type": "lesson",
+  "title": "Joining tables and building reports",
+  "runner": "sql",
+  "estMinutes": 22,
+  "sourceRef": "course-content.md:3581-3658,4806-4884"
+}

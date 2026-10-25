@@ -1,0 +1,10 @@
+{
+  "id": "8s25qw27",
+  "slug": "b7-library-database",
+  "type": "workshop",
+  "title": "Build a Library Database",
+  "runner": "sql",
+  "estMinutes": 50,
+  "sourceRef": "course-content.md:3430-3704",
+  "demo": "query.sql"
+}

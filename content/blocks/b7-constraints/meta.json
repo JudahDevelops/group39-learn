@@ -1,0 +1,9 @@
+{
+  "id": "46kbulut",
+  "slug": "b7-constraints",
+  "type": "lesson",
+  "title": "Constraints",
+  "runner": "sql",
+  "estMinutes": 15,
+  "sourceRef": "course-content.md:3661-3704,4841-4852"
+}

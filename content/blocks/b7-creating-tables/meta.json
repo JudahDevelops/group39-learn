@@ -1,0 +1,9 @@
+{
+  "id": "k6vd9ms1",
+  "slug": "b7-creating-tables",
+  "type": "lesson",
+  "title": "Installing PostgreSQL and creating tables",
+  "runner": "sql",
+  "estMinutes": 18,
+  "sourceRef": "course-content.md:3480-3533,4806-4875"
+}

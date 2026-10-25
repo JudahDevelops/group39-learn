@@ -1,0 +1,9 @@
+{
+  "id": "2rvxl4sg",
+  "slug": "b7-thinking-in-tables",
+  "type": "lesson",
+  "title": "Thinking in tables",
+  "runner": "sql",
+  "estMinutes": 15,
+  "sourceRef": "course-content.md:3430-3477,4806-4875"
+}

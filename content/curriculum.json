@@ -147,6 +147,18 @@
             "b4-python-review",
             "b4-python-quiz"
           ]
+        },
+        {
+          "id": "B7",
+          "title": "SQL and PostgreSQL",
+          "blocks": [
+            "b7-thinking-in-tables",
+            "b7-creating-tables",
+            "b7-reading-writing-data",
+            "b7-joins-and-reports",
+            "b7-constraints",
+            "b7-library-database"
+          ]
         }
       ]
     },
