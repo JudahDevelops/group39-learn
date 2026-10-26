@@ -383,9 +383,171 @@ insert into users (full_name, email, password_hash, role, gender, level, fees_cl
 
 This is the paper's answer to the question "How do you stop double allocation?" The rule lives in the database, so a mistake in the Python code cannot break it.
 
+## FastAPI and the database
+
+**SQLAlchemy** lets Python work with rows as objects. A model class stands for a table and an object stands for a row. The address of the database contains your password, so it lives in `backend/.env` and never in the code.
+
+| Name in `database.py` | What it is |
+|---|---|
+| `engine` | The connection, made from the database address |
+| `SessionLocal` | Makes sessions, each one a conversation with the database |
+| `Base` | The parent class of every model |
+| `get_db` | Gives each request a session and closes it afterwards |
+
+An endpoint asks FastAPI for a session with `db: Session = Depends(get_db)`. This is **dependency injection**.
+
+| You want to | You write |
+|---|---|
+| Read a sorted list | `db.scalars(select(Complaint).order_by(Complaint.deadline)).all()` |
+| Keep some rows | `query.where(Complaint.status == status)` |
+| Read one row by `id` | `db.get(Complaint, complaint_id)`, which is `None` when there is no such row |
+| Add a row | `db.add(complaint)` |
+| Give a new row its `id` | `db.flush()` |
+| Make every change permanent, together | `db.commit()` |
+| Reload an object | `db.refresh(complaint)` |
+
+`ComplaintOut` needs `model_config = ConfigDict(from_attributes=True)` before `response_model` can read a model object. Until the login chapter, the student and the room come in the request body.
+
+In the boxes of the lessons and the workshop, the database is SQLite in the browser's memory, and it is empty after a reload. On your laptop and in GitHub's checks it is PostgreSQL. Only the address changes. SQLite does not keep the time zone of a timestamp, and PostgreSQL does.
+
+::: tryit fastapi
+```python file=main.py
+from datetime import datetime, timedelta, timezone
+
+from fastapi import Depends, FastAPI
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from database import Base, engine, get_db
+from models import Complaint, ComplaintHistory
+from schemas import ComplaintIn, ComplaintOut
+
+Base.metadata.create_all(engine)
+
+app = FastAPI(title="IHMS")
+
+
+@app.get("/api/complaints", response_model=list[ComplaintOut])
+def list_complaints(db: Session = Depends(get_db)):
+    query = select(Complaint).order_by(Complaint.deadline)
+    return db.scalars(query).all()
+
+
+@app.post("/api/complaints", response_model=ComplaintOut, status_code=201)
+def create_complaint(body: ComplaintIn, db: Session = Depends(get_db)):
+    now = datetime.now(timezone.utc)
+    complaint = Complaint(
+        student_id=body.student_id,
+        room_id=body.room_id,
+        description=body.description,
+        category="plumbing",
+        urgency="urgent",
+        created_at=now,
+        deadline=now + timedelta(hours=24),
+    )
+    db.add(complaint)
+    db.flush()
+    db.add(ComplaintHistory(complaint_id=complaint.id, event="Lodged"))
+    db.commit()
+    db.refresh(complaint)
+    return complaint
+```
+
+```python file=database.py
+from sqlalchemy import create_engine
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
+
+engine = create_engine("sqlite://")
+SessionLocal = sessionmaker(bind=engine)
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+def get_db():
+    with SessionLocal() as db:
+        yield db
+```
+
+```python file=models.py
+from datetime import datetime
+
+from sqlalchemy import DateTime, ForeignKey, func
+from sqlalchemy.orm import Mapped, mapped_column
+
+from database import Base
+
+
+class User(Base):   # shortened: the real table has more columns
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    full_name: Mapped[str]
+
+
+class Room(Base):   # shortened: the real table has more columns
+    __tablename__ = "rooms"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    number: Mapped[str]
+
+
+class Complaint(Base):
+    __tablename__ = "complaints"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    student_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    room_id: Mapped[int] = mapped_column(ForeignKey("rooms.id"))
+    description: Mapped[str]
+    category: Mapped[str]
+    urgency: Mapped[str]
+    status: Mapped[str] = mapped_column(default="Open")
+    escalation_level: Mapped[int] = mapped_column(default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    deadline: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class ComplaintHistory(Base):
+    __tablename__ = "complaint_history"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    complaint_id: Mapped[int] = mapped_column(ForeignKey("complaints.id"))
+    event: Mapped[str]
+    actor_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+```
+
+```python file=schemas.py
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class ComplaintIn(BaseModel):
+    student_id: int
+    room_id: int
+    description: str = Field(min_length=10, max_length=1000)
+
+
+class ComplaintOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    description: str
+    category: str
+    urgency: str
+    status: str
+    deadline: datetime
+```
+:::
+
+Send `POST /api/complaints` with `{"description": "The pipe in the bathroom has burst", "student_id": 1, "room_id": 1}`, then `GET /api/complaints`.
+
 ## The IHMS database
 
-In the workshop you wrote the whole schema, a table at a time, parents before the tables that point to them: `hostels`, `rooms`, `bed_spaces`, `users`, `allocations`, `complaints` and `complaint_history`. You added the two partial unique indexes and watched the database refuse a second active allocation of a bed. In the lab you wrote the warden's reports as queries: open and overdue complaints, the average time to resolve, recurring faults and bed occupancy. You also created the `ihms` database in pgAdmin on your laptop and loaded the same schema into it.
+In the workshop you wrote the whole schema, a table at a time, parents before the tables that point to them: `hostels`, `rooms`, `bed_spaces`, `users`, `allocations`, `complaints` and `complaint_history`. You added the two partial unique indexes and watched the database refuse a second active allocation of a bed. In the lab you wrote the warden's reports as queries: open and overdue complaints, the average time to resolve, recurring faults and bed occupancy. You also created the `ihms` database in pgAdmin on your laptop and loaded the same schema into it. Then you connected FastAPI to a database with SQLAlchemy, first in the browser on SQLite and then on your laptop on PostgreSQL.
 
 ### Remember
 
@@ -400,3 +562,9 @@ In the workshop you wrote the whole schema, a table at a time, parents before th
 - A recurring fault is 3 or more complaints of the same category in one room within 30 days.
 - A partial unique index limits a rule to some rows, so a bed can have many allocations over time but only one active.
 - The deadlines are 24 hours for urgent, 72 hours for normal and 7 days for low.
+- A model class stands for a table and an object stands for a row. On your laptop the models describe tables that `schema.sql` made. They do not create them.
+- The database address has your password in it, so it goes in `backend/.env`, which is never committed.
+- `Depends(get_db)` gives an endpoint one session for one request and closes it afterwards.
+- `db.flush()` sends a row so it gets its `id`. `db.commit()` makes all the changes permanent together. Without a commit, nothing is saved.
+- `ComplaintOut` needs `from_attributes=True` to read model objects.
+- The browser uses SQLite in memory. Your laptop and GitHub use PostgreSQL. Only the address changes.

@@ -681,3 +681,123 @@ The `id` of the user who did it, and it may be empty
 ### --explanation--
 
 `actor_id` has a foreign key to `users` but no `not null`, so a history entry can be saved without a user. `complaint_id` is the column that points at the complaint, and it must have a value.
+
+## --question--
+
+### --text--
+
+Why does the database address go in `backend/.env` and not in the code?
+
+### --distractors--
+
+- SQLAlchemy only reads addresses from `.env` files
+- PostgreSQL refuses addresses that are written in Python files
+- It makes the queries run faster
+
+### --answer--
+
+It contains a password, and `.env` is never committed
+
+### --explanation--
+
+The address has your PostgreSQL password in it. Code is pushed to GitHub, but Git ignores `.env`, so the password stays on your laptop. SQLAlchemy and PostgreSQL do not care where the address is stored, and it has no effect on speed.
+
+## --question--
+
+### --text--
+
+What does `db.commit()` do?
+
+### --distractors--
+
+- Reads the saved rows back from the database
+- Opens a new session
+- Sends a row to the database so it gets an `id`, but does not make it permanent
+
+### --answer--
+
+Makes every change in the session permanent
+
+### --explanation--
+
+Until `db.commit()`, the changes of the session can still be thrown away. If the session closes without a commit, the database forgets them. Sending a row so it gets its `id` is what `db.flush()` does, and it does not make the row permanent.
+
+## --question--
+
+### --text--
+
+An endpoint has the parameter `db: Session = Depends(get_db)`. What does FastAPI do?
+
+### --distractors--
+
+- Creates the tables of the database when the server starts
+- Keeps one session open for every request until the server stops
+- Checks that the user is logged in before the function runs
+
+### --answer--
+
+Opens a session for this request, passes it in as `db`, and closes it afterwards
+
+### --explanation--
+
+`Depends(get_db)` is dependency injection. FastAPI runs `get_db` for each request, hands the session it yields to your function, and lets the `with` in `get_db` close it when the request ends. It creates no tables and checks no login.
+
+## --question--
+
+### --text--
+
+When a complaint and its first history row are saved, why does `db.flush()` come before the history row is added?
+
+### --distractors--
+
+- It makes the complaint permanent, so the history row can refer to it
+- It closes the session so a new one can be opened
+- It checks that the description is long enough
+
+### --answer--
+
+It sends the complaint to the database, so `complaint.id` is set for the history row
+
+### --explanation--
+
+The database gives a row its `id` when it receives the row. Before the flush, `complaint.id` is `None`, and the history row has nothing to point at. The flush does not make anything permanent: the single `db.commit()` at the end saves both rows together.
+
+## --question--
+
+### --text--
+
+The IHMS API works with SQLite in the browser. You run the same code against PostgreSQL on your laptop. What changes?
+
+### --distractors--
+
+- Every model is rewritten for PostgreSQL
+- Every `select` query is rewritten as raw SQL
+- The endpoints become `async def`
+
+### --answer--
+
+The database address, and nothing in the models or queries
+
+### --explanation--
+
+SQLAlchemy sits between your code and the database and writes the SQL for whichever database the address names. The models, queries and endpoints stay the same. One thing you may notice: SQLite does not keep the time zone of a timestamp, and PostgreSQL does.
+
+## --question--
+
+### --text--
+
+`ComplaintOut` is used as the `response_model` of an endpoint that returns `Complaint` objects from the database. Which line must it contain?
+
+### --distractors--
+
+- `model_config = ConfigDict(extra="forbid")`
+- `__tablename__ = "complaints"`
+- `status: Mapped[str] = mapped_column(default="Open")`
+
+### --answer--
+
+`model_config = ConfigDict(from_attributes=True)`
+
+### --explanation--
+
+A `Complaint` from the database is an object, not a dictionary. `from_attributes=True` lets Pydantic read `complaint.id`, `complaint.status` and so on. `__tablename__` and `mapped_column` belong in the model that describes the table, not in the reply model.

@@ -1,0 +1,9 @@
+{
+  "id": "o5jbwrtn",
+  "slug": "b7-database-api",
+  "type": "project",
+  "title": "Connect Your API to PostgreSQL",
+  "runner": "none",
+  "estMinutes": 90,
+  "sourceRef": "course-content.md:3707-3813; group39-ihms README.md, docs/CONTRACT.md and tests/official/test_db.py"
+}

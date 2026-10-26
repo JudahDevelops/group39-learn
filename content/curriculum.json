@@ -191,6 +191,9 @@
             "b7-ihms-database",
             "b7-warden-reports",
             "b7-laptop-database",
+            "b7-fastapi-sqlalchemy",
+            "b7-connect-fastapi-db",
+            "b7-database-api",
             "b7-sql-review",
             "b7-sql-quiz"
           ]

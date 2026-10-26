@@ -1,0 +1,9 @@
+{
+  "id": "f7zps8cr",
+  "slug": "b7-fastapi-sqlalchemy",
+  "type": "lesson",
+  "title": "Connect FastAPI to PostgreSQL with SQLAlchemy",
+  "runner": "fastapi",
+  "estMinutes": 25,
+  "sourceRef": "course-content.md:3707-3813"
+}
