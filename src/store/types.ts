@@ -185,6 +185,8 @@ export interface ProgressStore {
 
   // --- project submissions ---
   getProjectSubmission(projectId: string): Promise<ProjectSubmission | null>;
+  /** The signed-in member's most recently checked submission across all projects, or null. */
+  getLatestProjectSubmission(): Promise<ProjectSubmission | null>;
   saveProjectSubmission(
     projectId: string,
     repoUrl: string,

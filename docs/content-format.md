@@ -1157,6 +1157,34 @@ Paste the link to your repository below and press **Check my repo**.
 
 `ciJob` is the name of the GitHub Actions job that must be green (`lab-` plus lowercase words). It must be unique across projects.
 
+### What the learner sees
+
+- The block title, then **User stories** (the numbered list from `# --user-stories--`) and **Instructions** (the `# --instructions--` text). The instructions end by telling the learner to paste the link and press **Check my repo**, so keep that line.
+- **Check your repo**: a "Repository link" field and a **Check my repo** button. The field starts with the link from the member's latest check of any project, and they can change it. Only `https://github.com/owner/repo` is accepted (with or without `.git` or a trailing slash). Anything else is refused with a message before any request goes out.
+- After a check: a message, "Checked 2 minutes ago", the repository and commit that were read, and the list **Jobs in the latest run on main**. Each job shows its status and a link to it on GitHub, and a link at the top opens the run.
+- The last result is saved, so it shows again when the page opens, with no new request to GitHub.
+- On a pass the message is "Your project passes." with **Continue**, the first pass says "You earned 80 XP.", and later visits show "Project complete".
+
+### How passing is decided
+
+- The page reads the latest **completed** run on `main` of the repository's `labs.yml` workflow, then that run's jobs. Runs of any other workflow are ignored. It passes when the run has a job named exactly `ciJob` whose result is `success`. Failed, cancelled, skipped, timed-out and missing jobs do not pass.
+- Only that one job counts. Every other job in the run belongs to another project: it shows **Passed** when green and **Not started yet** otherwise, and is never shown as a failure. So write `ciJob` exactly as the template workflow names the job (`lab-setup`, `lab-db`, ...).
+- A pass marks the project complete and pays the project XP (80) once. Checking again, or a later failing check, neither pays again nor undoes it.
+- The check calls GitHub without a token, two requests per check, and GitHub allows 60 an hour per network.
+
+| What happened | What the learner reads | Saved for the admin |
+|---|---|---|
+| The job is green | Your project passes. | Passed |
+| The job is red, cancelled, skipped or timed out | The `ciJob` job failed. Open it on GitHub, fix, push, check again | Failing |
+| The run has no such job | The latest run has no `ciJob` job. Add `.github/workflows/labs.yml` from the template | Failing |
+| No completed run on `main` | No finished run on main yet. Push a commit, wait for the Actions tab to show a tick or a cross, then check again | Failing |
+| GitHub says 404 (repository not found or private, or no `labs.yml`) | GitHub cannot find that repository or its labs workflow | Failing |
+| GitHub's limit is used up | Try again after 3:42 pm, Lagos time (from `x-ratelimit-reset`) | Nothing saved |
+| No connection, or GitHub errors | Could not reach GitHub, or the error code | Nothing saved |
+| The link is not a repository link | Refused before any request | Nothing saved |
+
+A rate limit or a lost connection says nothing about the repo, so it never replaces the last saved result. The admin dashboard's Projects table reads the saved result by the project block id.
+
 ## 12. Validation rules
 
 `npm run validate:content` checks all of these. A zod rule is checked per file; a cross-file rule needs the whole tree.

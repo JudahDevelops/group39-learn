@@ -308,6 +308,18 @@ export class LocalStore implements ProgressStore {
     return all.find((p) => p.userId === user.id && p.projectId === projectId) ?? null;
   }
 
+  async getLatestProjectSubmission(): Promise<ProjectSubmission | null> {
+    const user = this.requireUser();
+    const mine = this.mirror
+      .get<ProjectSubmission[]>(KEYS.projectSubmissions, [])
+      .filter((p) => p.userId === user.id);
+    let latest: ProjectSubmission | null = null;
+    for (const p of mine) {
+      if (latest === null || Date.parse(p.checkedAt) >= Date.parse(latest.checkedAt)) latest = p;
+    }
+    return latest;
+  }
+
   async saveProjectSubmission(
     projectId: string,
     repoUrl: string,

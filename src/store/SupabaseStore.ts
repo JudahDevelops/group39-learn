@@ -531,6 +531,20 @@ export class SupabaseStore implements ProgressStore {
     return row ? toSubmission(row) : null;
   }
 
+  async getLatestProjectSubmission(): Promise<ProjectSubmission | null> {
+    const user = this.requireUser();
+    const row = unwrap(
+      await this.client
+        .from('project_submissions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('checked_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ) as ProjectSubmissionRow | null;
+    return row ? toSubmission(row) : null;
+  }
+
   async saveProjectSubmission(
     projectId: string,
     repoUrl: string,
