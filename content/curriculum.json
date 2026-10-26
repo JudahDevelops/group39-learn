@@ -149,6 +149,20 @@
           ]
         },
         {
+          "id": "B6",
+          "title": "HTTP and FastAPI",
+          "blocks": [
+            "b6-http-requests-responses",
+            "b6-designing-the-api",
+            "b6-your-first-api",
+            "b6-path-and-query-parameters",
+            "b6-request-bodies-pydantic",
+            "b6-serving-the-frontend",
+            "b6-organising-with-routers",
+            "b6-proverbs-api"
+          ]
+        },
+        {
           "id": "B7",
           "title": "SQL and PostgreSQL",
           "blocks": [

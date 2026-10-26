@@ -1,0 +1,9 @@
+{
+  "id": "5696dlbx",
+  "slug": "b6-path-and-query-parameters",
+  "type": "lesson",
+  "title": "Path and Query Parameters",
+  "runner": "fastapi",
+  "estMinutes": 20,
+  "sourceRef": "course-content.md:3188-3236"
+}

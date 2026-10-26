@@ -1,0 +1,9 @@
+{
+  "id": "hbg6sntp",
+  "slug": "b6-http-requests-responses",
+  "type": "lesson",
+  "title": "HTTP: Requests and Responses",
+  "runner": "fastapi",
+  "estMinutes": 20,
+  "sourceRef": "course-content.md:3034-3091"
+}

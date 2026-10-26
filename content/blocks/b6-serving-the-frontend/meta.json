@@ -1,0 +1,9 @@
+{
+  "id": "xmpuzu7f",
+  "slug": "b6-serving-the-frontend",
+  "type": "lesson",
+  "title": "Serving the Frontend and Connecting It",
+  "runner": "fastapi",
+  "estMinutes": 22,
+  "sourceRef": "course-content.md:3311-3375"
+}

@@ -1,0 +1,9 @@
+{
+  "id": "l85wl9ek",
+  "slug": "b6-your-first-api",
+  "type": "lesson",
+  "title": "Your First API",
+  "runner": "fastapi",
+  "estMinutes": 20,
+  "sourceRef": "course-content.md:3136-3184"
+}

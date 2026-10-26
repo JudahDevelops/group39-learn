@@ -1,0 +1,9 @@
+{
+  "id": "qs8hud15",
+  "slug": "b6-organising-with-routers",
+  "type": "lesson",
+  "title": "Organising a Bigger App",
+  "runner": "fastapi",
+  "estMinutes": 18,
+  "sourceRef": "course-content.md:3379-3424"
+}

@@ -1,0 +1,10 @@
+{
+  "id": "12btr7xc",
+  "slug": "b6-proverbs-api",
+  "type": "workshop",
+  "title": "Build a Proverbs API",
+  "runner": "fastapi",
+  "estMinutes": 45,
+  "sourceRef": "course-content.md:3040-3091,3188-3307",
+  "demo": "main.py"
+}

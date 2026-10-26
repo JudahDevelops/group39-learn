@@ -1,0 +1,9 @@
+{
+  "id": "ifxdb78u",
+  "slug": "b6-request-bodies-pydantic",
+  "type": "lesson",
+  "title": "Request Bodies with Pydantic",
+  "runner": "fastapi",
+  "estMinutes": 22,
+  "sourceRef": "course-content.md:3240-3307"
+}
