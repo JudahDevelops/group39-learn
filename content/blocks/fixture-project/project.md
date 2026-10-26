@@ -1,12 +1,12 @@
 ---
-ciJob: lab-setup
+ciJob: lab-fixture
 ---
 
 # --user-stories--
 
 1. You have a GitHub repository for your IHMS project.
 2. The repository has a `README.md` file.
-3. The `lab-setup` job in GitHub Actions passes.
+3. The `lab-fixture` job in GitHub Actions passes.
 
 # --instructions--
 

@@ -1,0 +1,9 @@
+{
+  "id": "hpf2mxys",
+  "slug": "b5-checking-with-pytest",
+  "type": "lesson",
+  "title": "Checking your code with pytest",
+  "runner": "python",
+  "estMinutes": 45,
+  "sourceRef": "course-content.md:2918-2965"
+}

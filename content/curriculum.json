@@ -149,6 +149,18 @@
           ]
         },
         {
+          "id": "B5",
+          "title": "Your laptop",
+          "blocks": [
+            "b5-files-and-terminal",
+            "b5-installing-tools",
+            "b5-python-projects",
+            "b5-checking-with-pytest",
+            "b5-git-and-github",
+            "b5-setup-repo"
+          ]
+        },
+        {
           "id": "B6",
           "title": "HTTP and FastAPI",
           "blocks": [

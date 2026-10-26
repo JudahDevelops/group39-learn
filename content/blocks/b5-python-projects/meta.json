@@ -1,0 +1,9 @@
+{
+  "id": "n3m9493u",
+  "slug": "b5-python-projects",
+  "type": "lesson",
+  "title": "Python projects, modules and virtual environments",
+  "runner": "python",
+  "estMinutes": 60,
+  "sourceRef": "course-content.md:2855-2916"
+}

@@ -65,13 +65,13 @@ function runWith(jobs: [string, string][]): Script {
 }
 
 const PASSING = runWith([
-  ['lab-setup', 'success'],
+  ['lab-fixture', 'success'],
   ['lab-db', 'failure'],
   ['lab-allocation', 'skipped'],
   ['lab-complaints', 'success'],
 ]);
 const FAILING = runWith([
-  ['lab-setup', 'failure'],
+  ['lab-fixture', 'failure'],
   ['lab-db', 'failure'],
   ['lab-allocation', 'success'],
 ]);
@@ -161,9 +161,9 @@ test('a green job completes the project and pays 80 XP once', async ({ page, cou
 
   // This project's job first; another project's job is never shown as a failure.
   await expect(jobs(page)).toHaveCount(4);
-  await expect(jobs(page).first()).toContainText('lab-setup');
-  await expect(job(page, 'lab-setup')).toContainText('This project');
-  await expect(job(page, 'lab-setup')).toContainText('Passed');
+  await expect(jobs(page).first()).toContainText('lab-fixture');
+  await expect(job(page, 'lab-fixture')).toContainText('This project');
+  await expect(job(page, 'lab-fixture')).toContainText('Passed');
   await expect(job(page, 'lab-complaints')).toContainText('Passed');
   await expect(job(page, 'lab-db')).toContainText('Not started yet');
   await expect(job(page, 'lab-allocation')).toContainText('Not started yet');
@@ -216,13 +216,13 @@ test('a failing job shows the failure and links to the run', async ({ page, cour
   await page.goto(projectPath(project.id));
   await checkRepo(page);
 
-  await expect(page.getByText('The lab-setup job failed.')).toBeVisible();
+  await expect(page.getByText('The lab-fixture job failed.')).toBeVisible();
   await expect(page.getByText('Your project passes.')).toBeHidden();
   await expect(page.getByText('Project complete')).toBeHidden();
   await expect(topbar(page).getByText('0 of 60 XP today')).toBeVisible();
 
-  await expect(job(page, 'lab-setup')).toContainText('Failed');
-  await expect(job(page, 'lab-setup').getByRole('link')).toHaveAttribute('href', jobUrl(0));
+  await expect(job(page, 'lab-fixture')).toContainText('Failed');
+  await expect(job(page, 'lab-fixture').getByRole('link')).toHaveAttribute('href', jobUrl(0));
   const runLink = page.getByRole('link', { name: 'View the run on GitHub' });
   await expect(runLink).toHaveAttribute('href', RUN_URL);
   await expect(runLink).toHaveAttribute('target', '_blank');
@@ -240,7 +240,7 @@ test("another lab's failure reads Not started yet, and never Failed", async ({ p
   await mockGithub(
     page,
     runWith([
-      ['lab-setup', 'success'],
+      ['lab-fixture', 'success'],
       ['lab-db', 'failure'],
       ['lab-email', 'cancelled'],
       ['lab-portals', 'timed_out'],
@@ -261,8 +261,8 @@ test('says when the project job is not in the run', async ({ page, course }) => 
   await mockGithub(page, runWith([['lab-db', 'failure']]));
   await page.goto(projectPath(course.summary('fixture-project').id));
   await checkRepo(page);
-  await expect(page.getByText('The latest run has no lab-setup job.')).toBeVisible();
-  await expect(job(page, 'lab-setup')).toContainText('Not in this run');
+  await expect(page.getByText('The latest run has no lab-fixture job.')).toBeVisible();
+  await expect(job(page, 'lab-fixture')).toContainText('Not in this run');
   await expect(job(page, 'lab-db')).toContainText('Not started yet');
   await expect(topbar(page).getByText('0 of 60 XP today')).toBeVisible();
 });
@@ -300,7 +300,7 @@ test('a rate limit says when to try again in Lagos time, and keeps the last real
   const github = await mockGithub(page, FAILING);
   await page.goto(projectPath(course.summary('fixture-project').id));
   await checkRepo(page);
-  await expect(page.getByText('The lab-setup job failed.')).toBeVisible();
+  await expect(page.getByText('The lab-fixture job failed.')).toBeVisible();
 
   // 14:42 UTC is 3:42 pm in Lagos.
   const reset = Date.UTC(2026, 9, 25, 14, 42, 0) / 1000;
@@ -313,7 +313,7 @@ test('a rate limit says when to try again in Lagos time, and keeps the last real
   await expect(page.getByText('GitHub is limiting checks from your network.')).toBeVisible();
   await expect(page.getByText('Try again after 3:42 pm, Lagos time.')).toBeVisible();
   // The earlier result is still there, and was not written over.
-  await expect(page.getByText('The lab-setup job failed.')).toBeVisible();
+  await expect(page.getByText('The lab-fixture job failed.')).toBeVisible();
   const saved = await stored<{ passed: boolean; runUrl: string }[]>(page, 'g39.projectSubmissions');
   expect(saved).toEqual([expect.objectContaining({ passed: false, runUrl: RUN_URL })]);
 
@@ -385,16 +385,16 @@ test('the saved result shows when the page opens again, without asking GitHub', 
   const github = await mockGithub(page, FAILING);
   await page.goto(projectPath(project.id));
   await checkRepo(page);
-  await expect(page.getByText('The lab-setup job failed.')).toBeVisible();
+  await expect(page.getByText('The lab-fixture job failed.')).toBeVisible();
   await expect(page.getByText(/^Checked (just now|\d+ minutes? ago)$/)).toBeVisible();
   expect(github.requests).toHaveLength(2);
 
   await page.reload();
   await expect(field(page)).toHaveValue(REPO_URL);
-  await expect(page.getByText('The lab-setup job failed.')).toBeVisible();
+  await expect(page.getByText('The lab-fixture job failed.')).toBeVisible();
   await expect(page.getByText(/^Checked (just now|\d+ minutes? ago)$/)).toBeVisible();
   await expect(page.getByText(`Repository ${OWNER}/${REPO}, commit a1b2c3d`)).toBeVisible();
-  await expect(job(page, 'lab-setup')).toContainText('Failed');
+  await expect(job(page, 'lab-fixture')).toContainText('Failed');
   await expect(job(page, 'lab-db')).toContainText('Not started yet');
   await expect(job(page, 'lab-allocation')).toContainText('Passed');
   await expect(page.getByRole('link', { name: 'View the run on GitHub' })).toHaveAttribute(
@@ -416,7 +416,7 @@ test('a saved pass shows again, with no new XP', async ({ page, course }) => {
   await expect(page.getByText('Your project passes.')).toBeVisible();
   await expect(page.getByText('Project complete')).toBeVisible();
   await expect(page.getByText('You earned 80 XP.')).toBeHidden();
-  await expect(job(page, 'lab-setup')).toContainText('Passed');
+  await expect(job(page, 'lab-fixture')).toContainText('Passed');
 });
 
 test('the field starts with the link from the latest check of any project', async ({
@@ -462,7 +462,7 @@ test.describe('375 px phone', () => {
     await mockGithub(
       page,
       runWith([
-        ['lab-setup', 'failure'],
+        ['lab-fixture', 'failure'],
         ['lab-triage-escalation', 'failure'],
         ['lab-api-tests', 'success'],
       ]),
@@ -472,7 +472,7 @@ test.describe('375 px phone', () => {
       page,
       'https://github.com/a-very-long-student-name-here/a-very-long-repository-name-ihms',
     );
-    await expect(page.getByText('The lab-setup job failed.')).toBeVisible();
+    await expect(page.getByText('The lab-fixture job failed.')).toBeVisible();
     const sideways = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );

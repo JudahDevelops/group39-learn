@@ -1,0 +1,9 @@
+{
+  "id": "lp75itnl",
+  "slug": "b5-setup-repo",
+  "type": "project",
+  "title": "Set Up Your IHMS Repo",
+  "runner": "none",
+  "estMinutes": 60,
+  "sourceRef": "course-content.md:2903-2905,3015-3019; group39-ihms README.md and tests/official/test_setup.py"
+}
