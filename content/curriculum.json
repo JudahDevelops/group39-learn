@@ -171,7 +171,11 @@
             "b6-request-bodies-pydantic",
             "b6-serving-the-frontend",
             "b6-organising-with-routers",
-            "b6-proverbs-api"
+            "b6-proverbs-api",
+            "b6-complaints-api",
+            "b6-occupancy-api",
+            "b6-http-fastapi-review",
+            "b6-http-fastapi-quiz"
           ]
         },
         {

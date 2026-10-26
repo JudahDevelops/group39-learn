@@ -1,0 +1,10 @@
+{
+  "id": "n0ktm01y",
+  "slug": "b6-complaints-api",
+  "type": "workshop",
+  "title": "Build the Complaints API",
+  "runner": "fastapi",
+  "estMinutes": 60,
+  "sourceRef": "course-content.md:3136-3307,4097-4155",
+  "demo": "main.py"
+}

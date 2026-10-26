@@ -1,0 +1,10 @@
+{
+  "id": "yo5fng4o",
+  "slug": "b6-occupancy-api",
+  "type": "lab",
+  "title": "Build the Occupancy Report API",
+  "runner": "fastapi",
+  "estMinutes": 35,
+  "sourceRef": "course-content.md:3600-3614,4366-4388,4881-4885",
+  "demo": "main.py"
+}

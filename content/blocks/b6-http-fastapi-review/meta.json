@@ -1,0 +1,9 @@
+{
+  "id": "acm8ucg8",
+  "slug": "b6-http-fastapi-review",
+  "type": "review",
+  "title": "HTTP and FastAPI review",
+  "runner": "none",
+  "estMinutes": 12,
+  "sourceRef": "course-content.md:3032-3427"
+}

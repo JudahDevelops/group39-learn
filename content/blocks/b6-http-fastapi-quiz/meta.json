@@ -1,0 +1,9 @@
+{
+  "id": "tczka2b2",
+  "slug": "b6-http-fastapi-quiz",
+  "type": "quiz",
+  "title": "HTTP and FastAPI quiz",
+  "runner": "none",
+  "estMinutes": 15,
+  "sourceRef": "course-content.md:3032-3427"
+}
